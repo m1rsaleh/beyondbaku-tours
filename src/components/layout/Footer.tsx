@@ -1,43 +1,55 @@
 import { Link } from 'react-router-dom'
 import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp, FaPhone, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
+
 
 export default function Footer() {
+ const [email, setEmail] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO: Newsletter API entegrasyonu
+    console.log('Newsletter email:', email)
+    alert('Teşekkürler! E-bültenimize kaydoldunuz.')
+    setEmail('')
+  }
+ 
   return (
     <footer className="bg-gradient-to-br from-primary via-dark-blue to-primary text-white">
-      {/* Newsletter Section */}
-      <div className="border-b border-white/10">
-        <div className="container mx-auto px-6 py-16">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h3 className="text-4xl font-serif font-bold mb-4 text-gold">
-                Özel Fırsatlardan Haberdar Ol
-              </h3>
-              <p className="text-gray-300 text-lg mb-8">
-                Yeni turlar ve indirimli fiyatlar için e-bültenimize katıl
-              </p>
-              
-              <form className="flex gap-3 max-w-md mx-auto">
-                <input
-                  type="email"
-                  placeholder="E-posta adresiniz"
-                  className="flex-1 px-6 py-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-gold focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="px-10 py-4 bg-gold hover:bg-gold/90 text-dark-blue font-bold rounded-full transition shadow-lg hover:shadow-gold/50"
-                >
-                  Abone Ol
-                </button>
-              </form>
-            </motion.div>
-          </div>
+     {/* Newsletter Section */}
+<div className="bg-gradient-to-r from-primary to-dark-blue py-12 sm:py-16">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="text-center max-w-2xl mx-auto">
+      <h3 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gold mb-3 sm:mb-4">
+        Özel Fırsatlardan Haberdar Ol
+      </h3>
+      <p className="text-sm sm:text-base md:text-lg mb-6 sm:mb-8 text-gray-200 px-2">
+        Yeni turlar ve indirimli fiyatlar için e-bültenimize katıl
+      </p>
+      
+      <form onSubmit={handleSubmit} className="w-full max-w-lg mx-auto">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="E-posta adresiniz"
+            required
+            className="flex-1 min-w-0 px-4 py-3 rounded-full text-gray-800 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-gold"
+          />
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-6 py-3 bg-gold hover:bg-gold/90 text-white font-bold rounded-full transition whitespace-nowrap text-sm sm:text-base flex-shrink-0"
+          >
+            Abone Ol
+          </button>
         </div>
-      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 
       {/* Main Footer Content */}
       <div className="container mx-auto px-6 py-16">
