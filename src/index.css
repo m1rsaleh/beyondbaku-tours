@@ -3,6 +3,23 @@
 @tailwind utilities;
 
 /* Hide scrollbar for destination cards */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
