@@ -188,7 +188,7 @@ export default function TourDetail() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-semibold transition whitespace-nowrap text-sm sm:text-base ${
+                      className={`flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 font-semibold transition whitespace-nowrap text-sm sm:text-base ${
                         activeTab === tab.id
                           ? 'text-gold border-b-2 border-gold'
                           : 'text-gray-600 hover:text-primary'
