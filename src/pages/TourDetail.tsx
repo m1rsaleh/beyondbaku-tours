@@ -80,7 +80,7 @@ export default function TourDetail() {
 
   return (
     <div className="bg-cream min-h-screen">
-      {/* Image Gallery - MOBİL İYİLEŞTİRİLDİ */}
+      {/* Image Gallery */}
       <section className="relative h-[50vh] sm:h-[60vh] lg:h-[70vh] overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.img
@@ -95,10 +95,8 @@ export default function TourDetail() {
           />
         </AnimatePresence>
 
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
 
-        {/* Navigation Arrows - MOBİL İYİLEŞTİRİLDİ */}
         <button
           onClick={prevImage}
           className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-full flex items-center justify-center transition z-20"
@@ -112,24 +110,21 @@ export default function TourDetail() {
           <FaChevronRight className="text-white text-lg sm:text-xl" />
         </button>
 
-        {/* Image Indicators */}
-        {/* Image Indicators - MOBİL İYİLEŞTİRİLDİ */}
-<div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20 px-4">
-  {tour.images.map((_, index) => (
-    <button
-      key={index}
-      onClick={() => setCurrentImageIndex(index)}
-      className={`transition-all duration-300 rounded-full flex-shrink-0 ${
-        index === currentImageIndex 
-          ? 'bg-gold w-6 sm:w-8 h-2' 
-          : 'bg-white/50 w-2 h-2 hover:bg-white/70'
-      }`}
-      aria-label={`Resim ${index + 1}`}
-    />
-  ))}
-</div>
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20 px-4">
+          {tour.images.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`transition-all duration-300 rounded-full flex-shrink-0 ${
+                index === currentImageIndex 
+                  ? 'bg-gold w-6 sm:w-8 h-2' 
+                  : 'bg-white/50 w-2 h-2 hover:bg-white/70'
+              }`}
+              aria-label={`Resim ${index + 1}`}
+            />
+          ))}
+        </div>
 
-        {/* Tour Title Overlay - MOBİL İYİLEŞTİRİLDİ */}
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-12 z-10">
           <div className="max-w-7xl mx-auto px-4">
             <motion.div
@@ -170,15 +165,15 @@ export default function TourDetail() {
         </div>
       </section>
 
-      {/* Main Content - MOBİL İYİLEŞTİRİLDİ */}
+      {/* Main Content */}
       <section className="py-8 sm:py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
+        {/* ✅ DEĞİŞİKLİK 1: px-3 oldu */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 w-full">
           <div className="grid lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
-            {/* Left: Tour Details */}
             <div className="lg:col-span-2">
-              {/* Tabs - MOBİL İYİLEŞTİRİLDİ */}
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
-                <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
+                {/* ✅ DEĞİŞİKLİK 2: px-2 gap-1 eklendi */}
+                <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide px-2 gap-1">
                   {[
                     { id: 'overview', label: 'Genel Bakış' },
                     { id: 'itinerary', label: 'Program' },
@@ -326,201 +321,194 @@ export default function TourDetail() {
               </div>
             </div>
 
-            {/* Right: Sticky Booking Form - MOBİL İYİLEŞTİRİLDİ */}
             <div className="lg:col-span-1">
-  <motion.div
-    initial={{ opacity: 0, y: 50 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.3 }}
-    className="lg:sticky lg:top-24"
-  >
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-w-md mx-auto lg:max-w-none">
-      {/* Price Header */}
-      <div className="bg-gradient-to-r from-primary to-secondary p-4 sm:p-6 text-white">
-        <div className="flex items-baseline justify-between mb-2">
-          <div>
-            <span className="text-3xl sm:text-4xl font-bold">${tour.price}</span>
-            <span className="text-base sm:text-lg ml-2">/ kişi</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <FaStar className="text-gold text-sm sm:text-base" />
-            <span className="font-bold text-sm sm:text-base">4.9</span>
-          </div>
-        </div>
-        <p className="text-xs sm:text-sm text-white/80">Tüm vergiler dahil</p>
-      </div>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="lg:sticky lg:top-24"
+              >
+                {/* ✅ DEĞİŞİKLİK 3: mx-3 eklendi */}
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-w-md mx-3 lg:mx-auto lg:max-w-none">
+                  <div className="bg-gradient-to-r from-primary to-secondary p-4 sm:p-6 text-white">
+                    <div className="flex items-baseline justify-between mb-2">
+                      <div>
+                        <span className="text-3xl sm:text-4xl font-bold">${tour.price}</span>
+                        <span className="text-base sm:text-lg ml-2">/ kişi</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FaStar className="text-gold text-sm sm:text-base" />
+                        <span className="font-bold text-sm sm:text-base">4.9</span>
+                      </div>
+                    </div>
+                    <p className="text-xs sm:text-sm text-white/80">Tüm vergiler dahil</p>
+                  </div>
 
-      {/* Booking Form */}
-      <form onSubmit={handleBooking} className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-        <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-            Tarih Seçin
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              required
-              value={bookingData.date}
-              onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
-              style={{
-                colorScheme: 'light',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                appearance: 'none'
-              }}
-              min={new Date().toISOString().split('T')[0]}
-            />
-          </div>
-        </div>
+                  <form onSubmit={handleBooking} className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Tarih Seçin
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          required
+                          value={bookingData.date}
+                          onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                          style={{
+                            colorScheme: 'light',
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none',
+                            appearance: 'none'
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                    </div>
 
-        <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-            Misafir Sayısı
-          </label>
-          <select
-            required
-            value={bookingData.guests}
-            onChange={(e) => setBookingData({ ...bookingData, guests: Number(e.target.value) })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base bg-white"
-          >
-            {[...Array(tour.max_group)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1} Kişi
-              </option>
-            ))}
-          </select>
-        </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Misafir Sayısı
+                      </label>
+                      <select
+                        required
+                        value={bookingData.guests}
+                        onChange={(e) => setBookingData({ ...bookingData, guests: Number(e.target.value) })}
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base bg-white"
+                      >
+                        {[...Array(tour.max_group)].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {i + 1} Kişi
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-        <div className="border-t border-gray-200 pt-3 sm:pt-4">
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-            İsim
-          </label>
-          <input
-            type="text"
-            required
-            value={bookingData.name}
-            onChange={(e) => setBookingData({ ...bookingData, name: e.target.value })}
-            placeholder="Adınız Soyadınız"
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
-          />
-        </div>
+                    <div className="border-t border-gray-200 pt-3 sm:pt-4">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        İsim
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={bookingData.name}
+                        onChange={(e) => setBookingData({ ...bookingData, name: e.target.value })}
+                        placeholder="Adınız Soyadınız"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                      />
+                    </div>
 
-        <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            required
-            value={bookingData.email}
-            onChange={(e) => setBookingData({ ...bookingData, email: e.target.value })}
-            placeholder="email@example.com"
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
-          />
-        </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={bookingData.email}
+                        onChange={(e) => setBookingData({ ...bookingData, email: e.target.value })}
+                        placeholder="email@example.com"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                      />
+                    </div>
 
-        <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-            Telefon
-          </label>
-          <input
-            type="tel"
-            required
-            value={bookingData.phone}
-            onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
-            placeholder="+90 5XX XXX XX XX"
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
-          />
-        </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                        Telefon
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={bookingData.phone}
+                        onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
+                        placeholder="+90 5XX XXX XX XX"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                      />
+                    </div>
 
-        {/* Total Price */}
-        <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
-          <div className="flex justify-between text-xs sm:text-sm">
-            <span className="text-gray-600">${tour.price} x {bookingData.guests} kişi</span>
-            <span className="font-semibold">${tour.price * bookingData.guests}</span>
-          </div>
-          <div className="flex justify-between text-xs sm:text-sm">
-            <span className="text-gray-600">Hizmet bedeli</span>
-            <span className="font-semibold">$0</span>
-          </div>
-          <div className="border-t border-gray-200 pt-2 flex justify-between">
-            <span className="font-bold text-primary text-sm sm:text-base">Toplam</span>
-            <span className="font-bold text-xl sm:text-2xl text-primary">
-              ${tour.price * bookingData.guests}
-            </span>
-          </div>
-        </div>
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-600">${tour.price} x {bookingData.guests} kişi</span>
+                        <span className="font-semibold">${tour.price * bookingData.guests}</span>
+                      </div>
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-600">Hizmet bedeli</span>
+                        <span className="font-semibold">$0</span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2 flex justify-between">
+                        <span className="font-bold text-primary text-sm sm:text-base">Toplam</span>
+                        <span className="font-bold text-xl sm:text-2xl text-primary">
+                          ${tour.price * bookingData.guests}
+                        </span>
+                      </div>
+                    </div>
 
-        <button
-          type="submit"
-          className="w-full py-3 sm:py-4 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition text-base sm:text-lg"
-        >
-          Rezervasyon Yap
-        </button>
+                    <button
+                      type="submit"
+                      className="w-full py-3 sm:py-4 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition text-base sm:text-lg"
+                    >
+                      Rezervasyon Yap
+                    </button>
 
-        <p className="text-xs text-gray-500 text-center">
-          Rezervasyon sonrası iptal ücretsizdir
-        </p>
-      </form>
+                    <p className="text-xs text-gray-500 text-center">
+                      Rezervasyon sonrası iptal ücretsizdir
+                    </p>
+                  </form>
 
-      {/* Contact Options */}
-      <div className="border-t border-gray-200 p-4 sm:p-6 space-y-2 sm:space-y-3">
-        <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
-          Yardıma mı ihtiyacınız var?
-        </p>
-        <a
-          href="https://wa.me/994501234567"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-green-50 hover:bg-green-100 rounded-lg transition"
-        >
-          <FaWhatsapp className="text-green-500 text-lg sm:text-xl flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-semibold text-gray-800">WhatsApp</p>
-            <p className="text-xs text-gray-600">Anında cevap</p>
-          </div>
-        </a>
-        <a
-          href="tel:+994501234567"
-          className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
-        >
-          <FaPhone className="text-blue-500 text-lg sm:text-xl flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-semibold text-gray-800">Telefon</p>
-            <p className="text-xs text-gray-600">+994 50 123 45 67</p>
-          </div>
-        </a>
-        <a
-          href="mailto:info@beyondbaku.com"
-          className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-gold/10 hover:bg-gold/20 rounded-lg transition"
-        >
-          <FaEnvelope className="text-gold text-lg sm:text-xl flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-semibold text-gray-800">Email</p>
-            <p className="text-xs text-gray-600 truncate">info@beyondbaku.com</p>
-          </div>
-        </a>
-      </div>
+                  <div className="border-t border-gray-200 p-4 sm:p-6 space-y-2 sm:space-y-3">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
+                      Yardıma mı ihtiyacınız var?
+                    </p>
+                    <a
+                      href="https://wa.me/994501234567"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                    >
+                      <FaWhatsapp className="text-green-500 text-lg sm:text-xl flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-gray-800">WhatsApp</p>
+                        <p className="text-xs text-gray-600">Anında cevap</p>
+                      </div>
+                    </a>
+                    <a
+                      href="tel:+994501234567"
+                      className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                    >
+                      <FaPhone className="text-blue-500 text-lg sm:text-xl flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-gray-800">Telefon</p>
+                        <p className="text-xs text-gray-600">+994 50 123 45 67</p>
+                      </div>
+                    </a>
+                    <a
+                      href="mailto:info@beyondbaku.com"
+                      className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-gold/10 hover:bg-gold/20 rounded-lg transition"
+                    >
+                      <FaEnvelope className="text-gold text-lg sm:text-xl flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-gray-800">Email</p>
+                        <p className="text-xs text-gray-600 truncate">info@beyondbaku.com</p>
+                      </div>
+                    </a>
+                  </div>
 
-      {/* Share */}
-      <div className="border-t border-gray-200 p-4 sm:p-6">
-        <button className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg hover:border-gold hover:text-gold transition font-semibold text-sm sm:text-base">
-          <FaShareAlt />
-          Paylaş
-        </button>
-      </div>
-    </div>
-  </motion.div>
-</div>
-
+                  <div className="border-t border-gray-200 p-4 sm:p-6">
+                    <button className="w-full flex items-center justify-center gap-2 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg hover:border-gold hover:text-gold transition font-semibold text-sm sm:text-base">
+                      <FaShareAlt />
+                      Paylaş
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Similar Tours */}
       <section className="py-12 sm:py-16 bg-white">
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
           <h2 className="text-3xl sm:text-4xl font-serif font-bold text-primary mb-6 sm:mb-8 text-center">
             Benzer <span className="text-gold">Turlar</span>
           </h2>
