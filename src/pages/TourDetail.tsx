@@ -173,26 +173,26 @@ export default function TourDetail() {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
                 {/* ✅ DEĞİŞİKLİK 2: px-2 gap-1 eklendi */}
-                <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide px-2 gap-1">
-                  {[
-                    { id: 'overview', label: 'Genel Bakış' },
-                    { id: 'itinerary', label: 'Program' },
-                    { id: 'includes', label: 'Dahil/Hariç' },
-                    { id: 'reviews', label: 'Yorumlar' }
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={`flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 font-semibold transition whitespace-nowrap text-sm sm:text-base ${
-                        activeTab === tab.id
-                          ? 'text-gold border-b-2 border-gold'
-                          : 'text-gray-600 hover:text-primary'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
+  {[
+    { id: 'overview' as const, label: 'Genel Bakış' },
+    { id: 'itinerary' as const, label: 'Program' },
+    { id: 'includes' as const, label: 'Dahil/Hariç' },
+    { id: 'reviews' as const, label: 'Yorumlar' }
+  ].map((tab) => (
+    <button
+      key={tab.id}
+      onClick={() => setActiveTab(tab.id)}
+      className={`flex-shrink-0 px-3 sm:px-6 py-3 sm:py-4 font-semibold transition whitespace-nowrap text-sm sm:text-base ${
+        activeTab === tab.id
+          ? 'text-gold border-b-2 border-gold'
+          : 'text-gray-600 hover:text-primary'
+      }`}
+    >
+      {tab.label}
+    </button>
+  ))}
+</div>
 
                 <div className="p-4 sm:p-6 lg:p-8">
                   {activeTab === 'overview' && (
