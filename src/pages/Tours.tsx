@@ -1,82 +1,80 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { FaStar, FaClock, FaUsers, FaMapMarkerAlt, FaFilter, FaSearch } from 'react-icons/fa'
-import { supabase } from '../lib/supabase'
-import type { Tour } from '../types'
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FaStar, FaClock, FaUsers, FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
+import { tourService } from '../services/tourService';
+import type { Tour } from '../types';
 
 export default function Tours() {
-  const [tours, setTours] = useState<Tour[]>([])
-  const [filteredTours, setFilteredTours] = useState<Tour[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [priceRange, setPriceRange] = useState('all')
-  const [sortBy, setSortBy] = useState<string>('popular')
-
-
-  useEffect(() => {
-    fetchTours()
-  }, [])
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [priceRange, setPriceRange] = useState('all');
+  const [sortBy, setSortBy] = useState<string>('popular');
 
   useEffect(() => {
-    filterTours()
-  }, [tours, searchTerm, selectedCategory, priceRange, sortBy])
+    fetchTours();
+  }, []);
+
+  useEffect(() => {
+    filterTours();
+    // eslint-disable-next-line
+  }, [tours, searchTerm, selectedCategory, priceRange, sortBy]);
 
   async function fetchTours() {
-    setLoading(true)
-    const { data } = await supabase
-      .from('tours')
-      .select('*')
-      .eq('is_active', true)
-    
-    if (data) {
-      setTours(data)
-      setFilteredTours(data)
+    setLoading(true);
+    try {
+      const data = await tourService.getAllTours();
+      setTours(data);
+      setFilteredTours(data);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false)
   }
 
   function filterTours() {
-    let filtered = [...tours]
+    let filtered = [...tours];
 
     // Search
     if (searchTerm) {
       filtered = filtered.filter(tour =>
         tour.title_tr.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tour.location.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      );
     }
 
     // Category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(tour => tour.category === selectedCategory)
+      filtered = filtered.filter(tour => tour.category === selectedCategory);
     }
 
     // Price
     if (priceRange !== 'all') {
-      const [min, max] = priceRange.split('-').map(Number)
+      const [min, max] = priceRange.split('-').map(Number);
       filtered = filtered.filter(tour => {
-        if (max) return tour.price >= min && tour.price <= max
-        return tour.price >= min
-      })
+        const price = Number(tour.price); // price string gelebilir
+        if (max) return price >= min && price <= max;
+        return price >= min;
+      });
     }
 
     // Sort
     filtered.sort((a, b) => {
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price
-      case 'price-high':
-        return b.price - a.price
-      case 'duration':
-        return parseInt(a.duration) - parseInt(b.duration)
-      default:
-        return 0
-    }
-  })
+      switch (sortBy) {
+        case 'price-low':
+          return Number(a.price) - Number(b.price);
+        case 'price-high':
+          return Number(b.price) - Number(a.price);
+        case 'duration':
+          return parseInt(a.duration) - parseInt(b.duration);
+        default:
+          return 0;
+      }
+    });
 
-    setFilteredTours(filtered)
+    setFilteredTours(filtered);
   }
 
   return (
@@ -91,7 +89,6 @@ export default function Tours() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/90 to-secondary/90"></div>
         </div>
-
         <div className="relative container mx-auto px-4 sm:px-6 z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -145,13 +142,12 @@ export default function Tours() {
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm"
                 >
                   <option value="all">Tümü</option>
-                  <option value="cultural">Kültür Turları</option>
-                  <option value="nature">Doğa Turları</option>
-                  <option value="adventure">Macera Turları</option>
-                  <option value="luxury">Lüks Turlar</option>
+                  <option value="Şehir">Şehir Turları</option>
+                  <option value="Doğa">Doğa Turları</option>
+                  <option value="Kültür">Kültür Turları</option>
+                  <option value="Macera">Macera Turları</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">Fiyat Aralığı</label>
                 <select
@@ -166,7 +162,6 @@ export default function Tours() {
                   <option value="500">$500+</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">Sıralama</label>
                 <select
@@ -180,14 +175,13 @@ export default function Tours() {
                   <option value="duration">Süre</option>
                 </select>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={() => {
-                    setSearchTerm('')
-                    setSelectedCategory('all')
-                    setPriceRange('all')
-                    setSortBy('popular')
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    setPriceRange('all');
+                    setSortBy('popular');
                   }}
                   className="w-full px-4 py-2 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition text-sm"
                 >
@@ -195,8 +189,6 @@ export default function Tours() {
                 </button>
               </div>
             </div>
-
-            {/* Results Count */}
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="text-sm text-gray-600">
                 <span className="font-bold text-primary">{filteredTours.length}</span> tur bulundu
@@ -226,9 +218,9 @@ export default function Tours() {
               <p className="text-2xl text-gray-500 mb-4">Tur bulunamadı</p>
               <button
                 onClick={() => {
-                  setSearchTerm('')
-                  setSelectedCategory('all')
-                  setPriceRange('all')
+                  setSearchTerm('');
+                  setSelectedCategory('all');
+                  setPriceRange('all');
                 }}
                 className="px-6 py-3 bg-gold text-white rounded-full hover:bg-gold/90 transition"
               >
@@ -244,7 +236,7 @@ export default function Tours() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Link to={`/tour/${tour.id}`} className="group block">
+                  <Link to={`/tours/${tour.id}`} className="group block">
                     <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 h-full">
                       <div className="relative h-64 sm:h-80 overflow-hidden">
                         <img
@@ -252,29 +244,23 @@ export default function Tours() {
                           alt={tour.title_tr}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
-                        
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
-                        
                         <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-white/95 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2 sm:py-2.5">
                           <span className="text-xl sm:text-2xl font-bold text-primary">${tour.price}</span>
                           <p className="text-[10px] sm:text-xs text-gray-500">/ kişi</p>
                         </div>
-
                         <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
                           <FaMapMarkerAlt className="text-gold" />
                           <span className="text-white font-medium text-sm">{tour.location}</span>
                         </div>
                       </div>
-
                       <div className="p-6 sm:p-8">
                         <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-3 sm:mb-4 group-hover:text-gold transition leading-tight">
                           {tour.title_tr}
                         </h3>
-                        
                         <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 line-clamp-2 leading-relaxed">
                           {tour.description_tr}
                         </p>
-
                         <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-gray-100">
                           <div className="flex items-center gap-3 sm:gap-4">
                             <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500">
@@ -287,7 +273,6 @@ export default function Tours() {
                               <span>Max {tour.max_group}</span>
                             </div>
                           </div>
-                          
                           <div className="flex items-center gap-1">
                             <FaStar className="text-gold" size={14} />
                             <span className="text-base sm:text-lg font-bold text-primary">4.9</span>
@@ -303,5 +288,5 @@ export default function Tours() {
         </div>
       </section>
     </div>
-  )
+  );
 }

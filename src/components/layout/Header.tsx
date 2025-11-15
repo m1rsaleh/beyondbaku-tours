@@ -44,6 +44,7 @@ export default function Header() {
             <Link to="/tours" className="font-medium text-gray-700 hover:text-gold transition">
               {t('nav.tours')}
             </Link>
+            <Link to="/blog">Blog</Link>
             <Link to="/about" className="font-medium text-gray-700 hover:text-gold transition">
               {t('nav.about')}
             </Link>

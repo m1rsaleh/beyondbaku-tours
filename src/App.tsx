@@ -1,42 +1,104 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Layout from './components/layout/Layout'
-import Home from './pages/Home'
-import Tours from './pages/Tours'
-import TourDetail from './pages/TourDetail'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import NotFound from './pages/NotFound'
-import Login from './pages/admin/Login'
-import Dashboard from './pages/admin/Dashboard'
-import TourForm from './pages/admin/TourForm'
-import ContentManager from './pages/admin/ContentManager'
-import ToursManager from './pages/admin/ToursManager'
-import Settings from './pages/admin/Settings'
+// src/App.tsx
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ToastProvider } from './contexts/ToastContext';
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Layouts
+import AdminLayout from './pages/admin/AdminLayout';
+import MainLayout from './components/layout/MainLayout';
+
+// Admin Pages
+import Dashboard from './pages/admin/Dashboard';
+import Login from './pages/admin/Login';
+import ToursManager from './pages/admin/tours/ToursManager';
+import TourForm from './pages/admin/tours/TourForm';
+import BookingsManager from './pages/admin/bookings/BookingsManager';
+import CustomersManager from './pages/admin/customers/CustomersManager';
+import ReviewsManager from './pages/admin/reviews/ReviewsManager';
+import ContentManager from './pages/admin/blog/ContentManager';
+import MessagesManager from './pages/admin/messages/MessagesManager';
+import GalleryManager from './pages/admin/gallery/GalleryManager';
+import Settings from './pages/admin/settings/Settings';
+import BlogForm from './pages/admin/blog/BlogForm';
+import CategoriesManager from './pages/admin/categories/CategoriesManager';
+import TranslationsManager from './pages/admin/translations/TranslationsManager';
+import BookingDetail from './pages/admin/bookings/BookingDetail';
+import CustomerDetail from './pages/admin/customers/CustomerDetail';
+import HomePageEditor from './pages/admin/pages/HomePageEditor';
+import AboutPageEditor from './pages/admin/pages/AboutPageEditor';
+import ContactPageEditor from './pages/admin/pages/ContactPageEditor';
+
+
+
+// Frontend Pages
+import Home from './pages/Home';
+import Tours from './pages/Tours';
+import TourDetail from './pages/TourDetail';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import NotFound from './pages/NotFound';
+import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 
 function App() {
   return (
+    <ToastProvider>
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Layout><Home /></Layout>} />
-        <Route path="/tours" element={<Layout><Tours /></Layout>} />
-        <Route path="/tour/:id" element={<Layout><TourDetail /></Layout>} />
-        <Route path="/about" element={<Layout><About /></Layout>} />
-        <Route path="/contact" element={<Layout><Contact /></Layout>} />
-
-        {/* Admin Routes */}
+        {/* Admin Login (Korumasız) */}
         <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/tours" element={<ToursManager />} />
-        <Route path="/admin/content" element={<ContentManager />} />
-        <Route path="/admin/settings" element={<Settings />} />
-        <Route path="/admin/tour/:id" element={<TourForm />} />
-        
-        {/* 404 - EN SONDA */}
+
+        {/* Admin Routes (Korumalı) */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="tours" element={<ToursManager />} />
+          <Route path="tours/new" element={<TourForm />} />
+          <Route path="tours/edit/:id" element={<TourForm />} />
+          <Route path="bookings" element={<BookingsManager />} />
+          <Route path="customers" element={<CustomersManager />} />
+          <Route path="reviews" element={<ReviewsManager />} />
+          <Route path="blog" element={<ContentManager />} />
+          <Route path="blog/new" element={<BlogForm />} /> 
+          <Route path="blog/edit/:id" element={<BlogForm />} /> 
+          <Route path="categories" element={<CategoriesManager />} /> 
+          <Route path="messages" element={<MessagesManager />} />
+          <Route path="gallery" element={<GalleryManager />} />
+          <Route path="translations" element={<TranslationsManager />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="bookings/:id" element={<BookingDetail />} />
+          <Route path="customers/:id" element={<CustomerDetail />} />
+          <Route path="pages/home" element={<HomePageEditor />} />
+          <Route path="pages/about" element={<AboutPageEditor />} />
+          <Route path="pages/contact" element={<ContactPageEditor />} />
+
+
+        </Route>
+
+        {/* Frontend Routes */}
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Home />} />
+          <Route path="tours" element={<Tours />} />
+          <Route path="tours/:id" element={<TourDetail />} />
+          <Route path="about" element={<About />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="blog" element={<Blog />} /> 
+          <Route path="blog/:slug" element={<BlogDetail />} />
+        </Route>
+
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
-  )
+    </ToastProvider>
+  );
 }
 
-export default App
+export default App;
