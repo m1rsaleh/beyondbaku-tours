@@ -1,17 +1,16 @@
-// src/contexts/ToastContext.tsx
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { FaCheckCircle, FaExclamationCircle, FaInfoCircle, FaExclamationTriangle } from 'react-icons/fa';
 
-type ToastType = 'success' | 'error' | 'info' | 'warning';
-
-interface Toast {
-  id: string;
-  type: ToastType;
-  message: string;
-}
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface ToastContextType {
-  showToast: (type: ToastType, message: string) => void;
+  showToast: (message: string, type: ToastType) => void;
+}
+
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -19,58 +18,56 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = (type: ToastType, message: string) => {
-    const id = Date.now().toString();
-    const newToast: Toast = { id, type, message };
-    
-    setToasts(prev => [...prev, newToast]);
-
-    // 3 saniye sonra otomatik kapat
+  const showToast = (message: string, type: ToastType) => {
+    const id = Date.now() + Math.random();  // ← UNİK ID
+    setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 4000);
   };
 
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
-
-  const getIcon = (type: ToastType) => {
+  const getToastIcon = (type: ToastType) => {
     switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5" />;
-      case 'error': return <AlertCircle className="w-5 h-5" />;
-      case 'warning': return <AlertTriangle className="w-5 h-5" />;
-      case 'info': return <Info className="w-5 h-5" />;
+      case 'success':
+        return <FaCheckCircle className="text-green-500 text-xl" />;
+      case 'error':
+        return <FaExclamationCircle className="text-red-500 text-xl" />;
+      case 'warning':
+        return <FaExclamationTriangle className="text-yellow-500 text-xl" />;
+      case 'info':
+        return <FaInfoCircle className="text-blue-500 text-xl" />;
     }
   };
 
-  const getStyles = (type: ToastType) => {
+  const getToastBg = (type: ToastType) => {
     switch (type) {
-      case 'success': return 'bg-green-50 border-green-200 text-green-800';
-      case 'error': return 'bg-red-50 border-red-200 text-red-800';
-      case 'warning': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-      case 'info': return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'success':
+        return 'bg-green-50 border-green-200';
+      case 'error':
+        return 'bg-red-50 border-red-200';
+      case 'warning':
+        return 'bg-yellow-50 border-yellow-200';
+      case 'info':
+        return 'bg-blue-50 border-blue-200';
     }
   };
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      
-      {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-3 max-w-md">
-        {toasts.map(toast => (
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 p-4 rounded-xl border shadow-lg transform transition-all duration-300 animate-slide-in ${getStyles(toast.type)}`}
+            className={`${getToastBg(toast.type)} border rounded-lg shadow-lg p-4 flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in-right`}
           >
-            {getIcon(toast.type)}
-            <p className="flex-1 font-medium">{toast.message}</p>
+            {getToastIcon(toast.type)}
+            <p className="text-gray-800 text-sm font-medium flex-1">{toast.message}</p>
             <button
-              onClick={() => removeToast(toast.id)}
-              className="hover:opacity-70 transition-opacity"
+              onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+              className="text-gray-400 hover:text-gray-600"
             >
-              <X className="w-5 h-5" />
+              ✕
             </button>
           </div>
         ))}

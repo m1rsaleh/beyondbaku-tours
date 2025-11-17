@@ -36,7 +36,7 @@ export default function CategoriesManager() {
       const data = await categoryService.getAll(categoryType);
       setCategories(data);
     } catch {
-      showToast('error', 'Kategoriler yüklenemedi!');
+      showToast('Kategoriler yüklenemedi!','error', );
     }
     setLoading(false);
   }

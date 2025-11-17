@@ -1,105 +1,77 @@
-// src/pages/admin/bookings/BookingsManager.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
+import { bookingService } from '../../../services/bookingService';
+import { useToast } from '../../../contexts/ToastContext';
+import type { Booking } from '../../../types';
 
-interface Booking {
-  id: string;
-  customer: string;
-  email: string;
-  phone: string;
-  tour: string;
-  date: string;
-  time: string;
-  guests: number;
-  amount: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  payment: 'paid' | 'pending' | 'refunded';
-  createdAt: string;
-}
+
 
 export default function BookingsManager() {
-   const navigate = useNavigate();
-  const [bookings] = useState<Booking[]>([
-    {
-      id: 'BK001',
-      customer: 'John Doe',
-      email: 'john@example.com',
-      phone: '+994 50 123 45 67',
-      tour: 'Gobustan & Mud Volcanoes',
-      date: '2025-11-20',
-      time: '09:00',
-      guests: 2,
-      amount: 90,
-      status: 'pending',
-      payment: 'pending',
-      createdAt: '2025-11-13'
-    },
-    {
-      id: 'BK002',
-      customer: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+994 50 234 56 78',
-      tour: 'Baku City Tour',
-      date: '2025-11-21',
-      time: '10:00',
-      guests: 4,
-      amount: 140,
-      status: 'confirmed',
-      payment: 'paid',
-      createdAt: '2025-11-12'
-    },
-    {
-      id: 'BK003',
-      customer: 'Mike Johnson',
-      email: 'mike@example.com',
-      phone: '+994 50 345 67 89',
-      tour: 'Gabala Adventure',
-      date: '2025-11-22',
-      time: '08:00',
-      guests: 3,
-      amount: 165,
-      status: 'confirmed',
-      payment: 'paid',
-      createdAt: '2025-11-11'
-    },
-    {
-      id: 'BK004',
-      customer: 'Sarah Wilson',
-      email: 'sarah@example.com',
-      phone: '+994 50 456 78 90',
-      tour: 'Sheki Culture Tour',
-      date: '2025-11-18',
-      time: '09:30',
-      guests: 2,
-      amount: 100,
-      status: 'completed',
-      payment: 'paid',
-      createdAt: '2025-11-10'
-    },
-    {
-      id: 'BK005',
-      customer: 'David Brown',
-      email: 'david@example.com',
-      phone: '+994 50 567 89 01',
-      tour: 'Gobustan & Mud Volcanoes',
-      date: '2025-11-15',
-      time: '09:00',
-      guests: 1,
-      amount: 45,
-      status: 'cancelled',
-      payment: 'refunded',
-      createdAt: '2025-11-09'
-    }
-  ]);
-
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); 
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  async function loadInitialData() {
+    setLoading(true);
+    await fetchBookings();
+    setLoading(false);
+  }
+
+  async function fetchBookings() {
+    try {
+      const data = await bookingService.getAllBookings();
+      setBookings(data);
+      console.log('📊 Bookings yüklendi:', data.length, 'adet');
+    } catch (error) {
+      console.error('Rezervasyonlar yüklenemedi:', error);
+    }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await fetchBookings();
+    setRefreshing(false);
+    showToast('Rezervasyonlar güncellendi!' as const, 'success' as const);
+  }
+
+  async function handleStatusChange(id: string, newStatus: Booking['status']) {
+  if (!confirm(`Rezervasyon durumunu "${newStatus}" olarak değiştirmek istediğinizden emin misiniz?`)) return;
+  
+  console.log('🔄 Durum değiştiriliyor:', { id, newStatus });
+  
+  const success = await bookingService.updateBookingStatus(id, newStatus);
+  console.log('✅ updateBookingStatus sonucu:', success);
+  
+  if (success) {
+    // Biraz bekle
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Liste yenile
+    await fetchBookings();
+    console.log('📊 Liste güncellendi');
+    
+    showToast('Durum başarıyla güncellendi!' as const, 'success' as const);
+  } else {
+    showToast('Durum güncellenemedi!' as const, 'error' as const);
+  }
+}
+
+
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
-      booking.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.tour.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.tour?.title_tr || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.id.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
@@ -114,8 +86,8 @@ export default function BookingsManager() {
     completed: bookings.filter(b => b.status === 'completed').length,
     cancelled: bookings.filter(b => b.status === 'cancelled').length,
     totalRevenue: bookings
-      .filter(b => b.payment === 'paid')
-      .reduce((sum, b) => sum + b.amount, 0)
+      .filter(b => b.status !== 'cancelled')
+      .reduce((sum, b) => sum + b.total_price, 0)
   };
 
   const getStatusColor = (status: string) => {
@@ -138,36 +110,39 @@ export default function BookingsManager() {
     }
   };
 
-  const getPaymentColor = (payment: string) => {
-    switch (payment) {
-      case 'paid': return 'bg-green-100 text-green-700';
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      case 'refunded': return 'bg-gray-100 text-gray-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getPaymentText = (payment: string) => {
-    switch (payment) {
-      case 'paid': return '✓ Ödendi';
-      case 'pending': return '⏳ Beklemede';
-      case 'refunded': return '↩ İade';
-      default: return payment;
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+    {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Rezervasyon Yönetimi</h1>
           <p className="text-gray-600 mt-1">Tüm rezervasyonları görüntüleyin ve yönetin</p>
         </div>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2">
-          <span>📥</span>
-          Excel'e Aktar
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
+            {refreshing ? 'Yenileniyor...' : 'Yenile'}
+          </button>
+          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2">
+            <span>📥</span>
+            Excel'e Aktar
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -271,11 +246,10 @@ export default function BookingsManager() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Müşteri</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tur</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tarih & Saat</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tarih</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kişi</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tutar</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ödeme</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlemler</th>
               </tr>
             </thead>
@@ -283,31 +257,28 @@ export default function BookingsManager() {
               {filteredBookings.map((booking) => (
                 <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">{booking.id}</span>
+                    <span className="font-medium text-gray-900">{booking.id.slice(0, 8)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <div className="font-medium text-gray-900">{booking.customer}</div>
+                      <div className="font-medium text-gray-900">{booking.customer_name}</div>
                       <div className="text-sm text-gray-500">{booking.email}</div>
                       <div className="text-sm text-gray-500">{booking.phone}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{booking.tour}</span>
+                    <span className="text-sm text-gray-900">{booking.tour?.title_tr || 'N/A'}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {new Date(booking.date).toLocaleDateString('tr-TR')}
-                      </div>
-                      <div className="text-sm text-gray-500">{booking.time}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {new Date(booking.tour_date).toLocaleDateString('tr-TR')}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-gray-900">{booking.guests}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-semibold text-gray-900">${booking.amount}</span>
+                    <span className="text-sm font-semibold text-gray-900">${booking.total_price}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full font-semibold ${getStatusColor(booking.status)}`}>
@@ -315,20 +286,23 @@ export default function BookingsManager() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full font-semibold ${getPaymentColor(booking.payment)}`}>
-                      {getPaymentText(booking.payment)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => navigate(`/admin/bookings/${booking.id}`)} className="p-1.5 hover:bg-blue-50 text-blue-600 rounded transition-colors" title="Detay" > 👁️ </button>
                       <button 
+                        onClick={() => navigate(`/admin/bookings/${booking.id}`)} 
+                        className="p-1.5 hover:bg-blue-50 text-blue-600 rounded transition-colors" 
+                        title="Detay"
+                      >
+                        👁️
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(booking.id, 'confirmed')}
                         className="p-1.5 hover:bg-green-50 text-green-600 rounded transition-colors"
                         title="Onayla"
                       >
                         ✓
                       </button>
                       <button 
+                        onClick={() => handleStatusChange(booking.id, 'cancelled')}
                         className="p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors"
                         title="İptal"
                       >

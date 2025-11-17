@@ -119,7 +119,7 @@ export default function ToursManager() {
             >
               <div className="relative h-48 bg-gray-200 overflow-hidden">
                 <img 
-                  src={tour.images?.[0] || 'https://via.placeholder.com/400x300?text=Tour'} 
+                  src={tour.image || 'https://via.placeholder.com/400x300'} 
                   alt={tour.title_tr}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />

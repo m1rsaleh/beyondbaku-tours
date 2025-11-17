@@ -31,11 +31,13 @@ export default function AdminLayout() {
         { name: 'Ana Sayfa', path: '/admin/pages/home', icon: '🏠' },
         { name: 'Hakkımızda', path: '/admin/pages/about', icon: 'ℹ️' },
         { name: 'İletişim', path: '/admin/pages/contact', icon: '📞' },
+        { name: 'Footer', path: '/admin/pages/footer', icon: '⬇️' }, // ✅ YENİ EKLENEN
       ]
     },
     { name: 'Yorumlar', path: '/admin/reviews', icon: '⭐' },
     { name: 'Galeri', path: '/admin/gallery', icon: '🖼️' },
     { name: 'Mesajlar', path: '/admin/messages', icon: '💬' },
+    { name: 'Aboneler', path: '/admin/newsletter', icon: '📧' },
     { name: 'Ayarlar', path: '/admin/settings', icon: '⚙️' },
   ];
 

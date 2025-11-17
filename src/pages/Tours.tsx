@@ -3,11 +3,19 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaStar, FaClock, FaUsers, FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
 import { tourService } from '../services/tourService';
+import { supabase } from '../lib/supabase';
 import type { Tour } from '../types';
+
+interface Category {
+  id: string;
+  name_tr: string;
+  slug: string;
+}
 
 export default function Tours() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -16,6 +24,7 @@ export default function Tours() {
 
   useEffect(() => {
     fetchTours();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -33,6 +42,11 @@ export default function Tours() {
       setLoading(false);
     }
   }
+
+ async function fetchCategories() {
+  const { data } = await supabase.from('categories').select('id, name_tr, slug').order('name_tr');
+  if (data) setCategories(data); // Category interface: { id: string, name_tr: string, slug: string }
+}
 
   function filterTours() {
     let filtered = [...tours];
@@ -54,7 +68,7 @@ export default function Tours() {
     if (priceRange !== 'all') {
       const [min, max] = priceRange.split('-').map(Number);
       filtered = filtered.filter(tour => {
-        const price = Number(tour.price); // price string gelebilir
+        const price = Number(tour.price);
         if (max) return price >= min && price <= max;
         return price >= min;
       });
@@ -79,7 +93,7 @@ export default function Tours() {
 
   return (
     <div className="bg-cream min-h-screen">
-      {/* Hero Header */}
+       {/* Hero Header */}
       <section className="relative h-[40vh] sm:h-[50vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
@@ -142,10 +156,11 @@ export default function Tours() {
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm"
                 >
                   <option value="all">Tümü</option>
-                  <option value="Şehir">Şehir Turları</option>
-                  <option value="Doğa">Doğa Turları</option>
-                  <option value="Kültür">Kültür Turları</option>
-                  <option value="Macera">Macera Turları</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name_tr}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -197,7 +212,6 @@ export default function Tours() {
           </motion.div>
         </div>
       </section>
-
       {/* Tours Grid */}
       <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6">
@@ -228,6 +242,7 @@ export default function Tours() {
               </button>
             </div>
           ) : (
+            
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredTours.map((tour, index) => (
                 <motion.div
@@ -240,7 +255,7 @@ export default function Tours() {
                     <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 h-full">
                       <div className="relative h-64 sm:h-80 overflow-hidden">
                         <img
-                          src={tour.images[0]}
+                         src={tour.image || 'https://via.placeholder.com/400x300'}
                           alt={tour.title_tr}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />

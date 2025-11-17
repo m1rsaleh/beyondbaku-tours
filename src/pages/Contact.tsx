@@ -1,8 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaWhatsapp, FaClock, FaFacebook, FaInstagram, FaTwitter, FaChevronDown } from 'react-icons/fa'
+import { supabase } from '../lib/supabase'
 
-// FAQ Accordion Component - DOSYANIN EN ÜSTÜNE EKLE
+interface ContactContent {
+  hero_badge: string;
+  hero_title: string;
+  hero_subtitle: string;
+  hero_image: string;
+  address: string;
+  phone: string;
+  email: string;
+  whatsapp: string;
+  working_hours: string;
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  map_lat: string;
+  map_lng: string;
+  map_embed_url: string;
+}
+
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  order_index: number;
+}
+
 function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -47,6 +72,10 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
 }
 
 export default function Contact() {
+  const [content, setContent] = useState<ContactContent | null>(null);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -56,39 +85,84 @@ export default function Contact() {
   })
 
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    loadContactContent();
+  }, []);
+
+  async function loadContactContent() {
+    try {
+      const [contentData, faqsData] = await Promise.all([
+        supabase.from('contact_page_content').select('*').single(),
+        supabase.from('contact_faqs').select('*').order('order_index')
+      ]);
+
+      if (contentData.data) setContent(contentData.data);
+      if (faqsData.data) setFaqs(faqsData.data);
+    } catch (error) {
+      console.error('Contact content yükleme hatası:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
+    setSubmitting(true)
+
+    try {
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert([{
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          status: 'new'
+        }]);
+
+      if (error) throw error;
+
+      setSubmitted(true)
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      });
+      
+      setTimeout(() => setSubmitted(false), 5000)
+    } catch (error) {
+      console.error('Mesaj gönderme hatası:', error);
+      alert('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const faqs = [
-    {
-      question: 'Rezervasyon nasıl yapılır?',
-      answer: 'Websitemizden istediğiniz turu seçip rezervasyon formunu doldurabilir, WhatsApp üzerinden bizimle iletişime geçebilir veya direkt telefon ile arayabilirsiniz. Rezervasyon onayı 24 saat içinde tarafınıza iletilir.'
-    },
-    {
-      question: 'İptal politikası nedir?',
-      answer: 'Tur başlangıcından 48 saat öncesine kadar ücretsiz iptal hakkınız bulunmaktadır. 48 saatten sonraki iptallerde %50 kesinti uygulanır. Tur günü yapılan iptallerde ücret iadesi yapılmaz.'
-    },
-    {
-      question: 'Ödeme seçenekleri nelerdir?',
-      answer: 'Kredi kartı, banka transferi, havale veya nakit ödeme kabul edilmektedir. Taksitli ödeme seçenekleri için müşteri hizmetlerimizle iletişime geçebilirsiniz.'
-    },
-    {
-      question: 'Grup indirimi var mı?',
-      answer: 'Evet! 6 kişi ve üzeri grup rezervasyonlarında %15, 10 kişi ve üzeri rezervasyonlarda %20 indirim uygulanmaktadır. Özel grup turları için özel fiyat teklifi alabilirsiniz.'
-    }
-  ]
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!content) return null;
 
   return (
     <div className="bg-cream min-h-screen">
-      {/* Hero Section */}
+      {/* Hero Section - DİNAMİK */}
       <section className="relative h-[40vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80"
+            src={content.hero_image}
             alt="Contact"
             className="w-full h-full object-cover"
           />
@@ -102,19 +176,19 @@ export default function Contact() {
             transition={{ duration: 0.8 }}
           >
             <p className="text-xs sm:text-sm tracking-[0.3em] uppercase text-gold font-semibold mb-3 sm:mb-4">
-              Get In Touch
+              {content.hero_badge}
             </p>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-4 sm:mb-6">
-              <span className="text-gold">İletişime</span> Geçin
+              <span className="text-gold">{content.hero_title.split(' ')[0]}</span> {content.hero_title.split(' ').slice(1).join(' ')}
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-2xl mx-auto px-4">
-              Size yardımcı olmak için buradayız
+              {content.hero_subtitle}
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Contact Info Cards */}
+      {/* Contact Info Cards - DİNAMİK */}
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
@@ -122,25 +196,25 @@ export default function Contact() {
               {
                 icon: FaPhone,
                 title: 'Telefon',
-                info: '+994 50 123 45 67',
-                link: 'tel:+994501234567'
+                info: content.phone,
+                link: `tel:${content.phone.replace(/\s/g, '')}`
               },
               {
                 icon: FaWhatsapp,
                 title: 'WhatsApp',
                 info: 'Anında Mesaj',
-                link: 'https://wa.me/994501234567'
+                link: content.whatsapp
               },
               {
                 icon: FaEnvelope,
                 title: 'Email',
-                info: 'info@beyondbaku.com',
-                link: 'mailto:info@beyondbaku.com'
+                info: content.email,
+                link: `mailto:${content.email}`
               },
               {
                 icon: FaClock,
                 title: 'Çalışma Saatleri',
-                info: '09:00 - 18:00',
+                info: content.working_hours,
                 link: null
               }
             ].map((item, index) => (
@@ -167,7 +241,7 @@ export default function Contact() {
 
           {/* Contact Form & Map */}
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
+            {/* Contact Form - DİNAMİK */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -230,7 +304,7 @@ export default function Contact() {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
-                      placeholder="+90 5XX XXX XX XX"
+                      placeholder="+994 XX XXX XX XX"
                     />
                   </div>
                 </div>
@@ -270,24 +344,25 @@ export default function Contact() {
 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition text-lg"
+                  disabled={submitting}
+                  className="w-full py-4 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition text-lg disabled:opacity-50"
                 >
-                  Mesaj Gönder
+                  {submitting ? 'Gönderiliyor...' : 'Mesaj Gönder'}
                 </button>
               </form>
             </motion.div>
 
-            {/* Map & More */}
+                        {/* Map & More */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               className="space-y-8"
             >
-              {/* Google Map */}
+              {/* Google Map - DİNAMİK */}
               <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194472.8861494!2d49.69315555!3d40.3953868!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40307d6bd6211cf9%3A0x343f6b5e7ae56c6b!2sBaku%2C%20Azerbaijan!5e0!3m2!1sen!2s!4v1234567890"
+                  src={content.map_embed_url || `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194472.8861494!2d${content.map_lng}!3d${content.map_lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40307d6bd6211cf9%3A0x343f6b5e7ae56c6b!2sBaku%2C%20Azerbaijan!5e0!3m2!1sen!2s!4v1234567890`}
                   width="100%"
                   height="300"
                   style={{ border: 0 }}
@@ -301,24 +376,24 @@ export default function Contact() {
                     <div>
                       <h3 className="font-bold text-primary mb-1">Ofis Adresimiz</h3>
                       <p className="text-gray-600 text-sm">
-                        Nizami Street 123, Baku, Azerbaijan
+                        {content.address}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Social Media */}
+              {/* Social Media - DİNAMİK */}
               <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
                 <h3 className="text-2xl font-serif font-bold text-primary mb-6">
                   Bizi Takip Edin
                 </h3>
                 <div className="flex gap-4">
                   {[
-                    { icon: FaFacebook, link: 'https://facebook.com', color: 'hover:text-blue-600' },
-                    { icon: FaInstagram, link: 'https://instagram.com', color: 'hover:text-pink-600' },
-                    { icon: FaTwitter, link: 'https://twitter.com', color: 'hover:text-blue-400' },
-                    { icon: FaWhatsapp, link: 'https://wa.me/994501234567', color: 'hover:text-green-500' }
+                    { icon: FaFacebook, link: content.facebook, color: 'hover:text-blue-600' },
+                    { icon: FaInstagram, link: content.instagram, color: 'hover:text-pink-600' },
+                    { icon: FaTwitter, link: content.twitter, color: 'hover:text-blue-400' },
+                    { icon: FaWhatsapp, link: content.whatsapp, color: 'hover:text-green-500' }
                   ].map((social, index) => (
                     <a
                       key={index}
@@ -333,7 +408,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* FAQ Accordion */}
+              {/* FAQ Accordion - DİNAMİK */}
               <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
                 <h3 className="text-2xl font-serif font-bold text-primary mb-6">
                   Sıkça Sorulan Sorular
@@ -341,7 +416,7 @@ export default function Contact() {
                 
                 <div className="space-y-4">
                   {faqs.map((faq, index) => (
-                    <FAQItem key={index} question={faq.question} answer={faq.answer} index={index} />
+                    <FAQItem key={faq.id} question={faq.question} answer={faq.answer} index={index} />
                   ))}
                 </div>
               </div>
@@ -352,3 +427,4 @@ export default function Contact() {
     </div>
   )
 }
+

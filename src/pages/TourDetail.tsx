@@ -8,18 +8,26 @@ import {
 } from 'react-icons/fa';
 import { tourService } from '../services/tourService';
 import { reviewService } from '../services/reviewService';
+import { bookingService } from '../services/bookingService';
+import { useToast } from '../contexts/ToastContext';
 import type { Tour, Review } from '../types';
-
-const randomAvatar = (idx: number) =>
-  `https://i.pravatar.cc/60?img=${(idx % 70) + 1}`;
+import ReviewCard from '../components/ReviewCard';
+import { supabase } from '../lib/supabase';
 
 export default function TourDetail() {
   const { id } = useParams();
+  const { showToast } = useToast();
+  
+  // Tour & Reviews State
   const [tour, setTour] = useState<Tour | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // UI State
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'itinerary' | 'includes' | 'reviews'>('overview');
+  
+  // Booking Form State
   const [bookingData, setBookingData] = useState({
     date: '',
     guests: 1,
@@ -27,9 +35,24 @@ export default function TourDetail() {
     email: '',
     phone: ''
   });
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Review Form State
+  const [reviewForm, setReviewForm] = useState({
+    name: '',
+    email: '',
+    rating: 5,
+    comment: '',
+    location: ''
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<number>(5);
 
+  // Load tour & reviews
   useEffect(() => {
-    if (id) fetchAll();
+    if (id) {
+      fetchAll();
+    }
   }, [id]);
 
   async function fetchAll() {
@@ -39,29 +62,190 @@ export default function TourDetail() {
         tourService.getTourById(id!),
         reviewService.getReviewsByTourId(id!)
       ]);
-      setTour(tourData);
-      setReviews(reviewData);
+      
+      if (tourData) {
+        setTour(tourData);
+      }
+      
+      setReviews(reviewData || []);
+    } catch (error) {
+      console.error('Veri çekme hatası:', error);
+      setTour(null);
+      setReviews([]);
     } finally {
       setLoading(false);
     }
   }
 
+  // 🖼️ GÖRSEL GALERİSİ FONKSİYONLARI
   const nextImage = () => {
-    if (tour) setCurrentImageIndex(v => (v + 1) % tour.images.length);
-  };
-  const prevImage = () => {
-    if (tour) setCurrentImageIndex(v => (v - 1 + tour.images.length) % tour.images.length);
+    if (tour?.images && Array.isArray(tour.images) && tour.images.length > 1) {
+      setCurrentImageIndex((prev) => 
+        prev === tour.images!.length - 1 ? 0 : prev + 1
+      );
+    }
   };
 
+  const prevImage = () => {
+    if (tour?.images && Array.isArray(tour.images) && tour.images.length > 1) {
+      setCurrentImageIndex((prev) => 
+        prev === 0 ? tour.images!.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Handle Booking
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Rezervasyon talebi alındı! Kısa süre içinde sizinle iletişime geçeceğiz.');
+    
+    if (!bookingData.date || !bookingData.name || !bookingData.email || !bookingData.phone) {
+      showToast('Lütfen tüm alanları doldurun!', 'error');
+      return;
+    }
+
+    if (bookingData.guests < 1) {
+      showToast('En az 1 kişi seçmelisiniz!', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const booking = await bookingService.createBooking({
+        tour_id: tour!.id,
+        customer_name: bookingData.name,
+        email: bookingData.email,
+        phone: bookingData.phone,
+        tour_date: bookingData.date,
+        guests: bookingData.guests,
+        total_price: Number(tour!.price) * bookingData.guests,
+        status: 'pending',
+        special_requests: ''
+      });
+
+      if (booking) {
+        showToast(
+          'Rezervasyon talebiniz alındı! En kısa sürede sizinle iletişime geçeceğiz.',
+          'success'
+        );
+        
+        // Form reset
+        setBookingData({
+          date: '',
+          guests: 1,
+          name: '',
+          email: '',
+          phone: ''
+        });
+      }
+    } catch (error) {
+      console.error('Rezervasyon hatası:', error);
+      showToast(
+        'Rezervasyon oluşturulamadı. Lütfen tekrar deneyin.',
+        'error'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  // ✅ Handle Review Submit - FIXED!
+  // ✅ Handle Review Submit - LOCATION İLE
+const handleReviewSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!reviewForm.name || !reviewForm.email || !reviewForm.comment || !reviewForm.location) {
+    showToast('Lütfen tüm alanları doldurun!', 'error');
+    return;
+  }
+
+  if (selectedRating < 1 || selectedRating > 5) {
+    showToast('Lütfen 1-5 arası puan verin!', 'error');
+    return;
+  }
+
+  setSubmittingReview(true);
+
+  try {
+    console.log('🔵 Gönderilen data:', {
+      tour_id: tour?.id,
+      name: reviewForm.name,
+      email: reviewForm.email,
+      rating: selectedRating,
+      comment: reviewForm.comment,
+      location: reviewForm.location,
+      is_approved: false,
+      is_featured: false
+    });
+
+    const { data, error } = await supabase
+      .from('testimonials')
+      .insert([{
+        tour_id: tour?.id || null,  // ✅ optional chaining
+        name: reviewForm.name,
+        email: reviewForm.email,
+        rating: selectedRating,
+        comment: reviewForm.comment,
+        location: reviewForm.location,
+        is_approved: false,
+        is_featured: false
+      }])
+      .select();  // ✅ EKLE - Eklenen kaydı döndür
+
+    console.log('✅ Supabase response:', { data, error });
+
+    if (error) {
+      console.error('❌ Insert hatası:', error);
+      throw error;
+    }
+
+    if (data) {
+      console.log('✅ Yorum eklendi:', data);
+      showToast(
+        'Yorumunuz başarıyla gönderildi! Admin onayından sonra yayınlanacaktır.',
+        'success'
+      );
+      
+      // Form reset
+      setReviewForm({
+        name: '',
+        email: '',
+        rating: 5,
+        comment: '',
+        location: ''
+      });
+      setSelectedRating(5);
+    }
+  } catch (error: any) {
+    console.error('❌ Catch bloğu:', error);
+    showToast(
+      `Yorum gönderilemedi: ${error.message || 'Bilinmeyen hata'}`,
+      'error'
+    );
+  } finally {
+    setSubmittingReview(false);
+  }
+};
+
+
+
+  // Calculate average rating
   const average = reviews.length
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '0.0';
 
+  // Hangi görseli göstereceğimizi belirle
+  const getCurrentImage = () => {
+    if (tour?.images && Array.isArray(tour.images) && tour.images.length > 0) {
+      return tour.images[currentImageIndex];
+    }
+    return tour?.image || 'https://via.placeholder.com/1600x600';
+  };
+
+  // Galeri butonlarını göster mi?
+  const hasMultipleImages = tour?.images && Array.isArray(tour.images) && tour.images.length > 1;
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
@@ -73,12 +257,15 @@ export default function TourDetail() {
     );
   }
 
+  // Not found state
   if (!tour) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-primary mb-4">Tur Bulunamadı</h2>
-          <Link to="/tours" className="text-gold hover:underline">Turlar sayfasına dön</Link>
+          <Link to="/tours" className="text-gold hover:underline">
+            Turlar sayfasına dön
+          </Link>
         </div>
       </div>
     );
@@ -91,7 +278,7 @@ export default function TourDetail() {
         <AnimatePresence mode="wait">
           <motion.img
             key={currentImageIndex}
-            src={tour.images[currentImageIndex]}
+            src={getCurrentImage()}
             alt={tour.title_tr}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -101,32 +288,41 @@ export default function TourDetail() {
           />
         </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-        <button
-          onClick={prevImage}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-full flex items-center justify-center transition z-20"
-        >
-          <FaChevronLeft className="text-white text-lg sm:text-xl" />
-        </button>
-        <button
-          onClick={nextImage}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-full flex items-center justify-center transition z-20"
-        >
-          <FaChevronRight className="text-white text-lg sm:text-xl" />
-        </button>
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20 px-4">
-          {tour.images.map((_, idx) => (
+        
+        {/* PREV/NEXT Buttons */}
+        {hasMultipleImages && (
+          <>
             <button
-              key={idx}
-              onClick={() => setCurrentImageIndex(idx)}
-              className={`transition-all duration-300 rounded-full flex-shrink-0 ${
-                idx === currentImageIndex
-                  ? 'bg-gold w-6 sm:w-8 h-2'
-                  : 'bg-white/50 w-2 h-2 hover:bg-white/70'
-              }`}
-              aria-label={`Resim ${idx + 1}`}
-            />
-          ))}
-        </div>
+              onClick={prevImage}
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-full flex items-center justify-center transition z-20"
+            >
+              <FaChevronLeft className="text-white text-lg sm:text-xl" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-full flex items-center justify-center transition z-20"
+            >
+              <FaChevronRight className="text-white text-lg sm:text-xl" />
+            </button>
+
+            {/* Image Indicators */}
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+              {Array.isArray(tour.images) && tour.images.map((_: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`transition-all ${
+                    idx === currentImageIndex 
+                      ? 'w-8 h-2 bg-white rounded-full' 
+                      : 'w-2 h-2 bg-white/50 rounded-full hover:bg-white/70'
+                  }`}
+                  aria-label={`Görsel ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-12 z-10">
           <div className="max-w-7xl mx-auto px-4">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
@@ -162,11 +358,12 @@ export default function TourDetail() {
           </div>
         </div>
       </section>
-      {/* CONTENT → grid 3lü yapıda tab içerik + sağ panel */}
+
+      {/* CONTENT */}
       <section className="py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 w-full">
           <div className="grid lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
-            {/* SOL: Tabs ve içerik */}
+            {/* SOL: Tabs */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg mb-6 sm:mb-8">
                 <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
@@ -196,7 +393,7 @@ export default function TourDetail() {
                       <p className="text-gray-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">{tour.description_tr}</p>
                       <h4 className="text-lg sm:text-xl font-bold text-primary mb-3 sm:mb-4">Öne Çıkan Özellikler</h4>
                       <ul className="space-y-2 sm:space-y-3">
-                        {(tour.features_tr || []).map((feature: string, idx: number) => (
+                        {(Array.isArray(tour.features_tr) ? tour.features_tr : []).map((feature: string, idx: number) => (
                           <li key={idx} className="flex items-start gap-2 sm:gap-3">
                             <FaCheck className="text-gold mt-1 flex-shrink-0 text-sm" />
                             <span className="text-gray-600 text-sm sm:text-base">{feature}</span>
@@ -205,6 +402,7 @@ export default function TourDetail() {
                       </ul>
                     </motion.div>
                   )}
+
                   {activeTab === 'itinerary' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                       <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-4 sm:mb-6">Günlük Program</h3>
@@ -221,6 +419,7 @@ export default function TourDetail() {
                       </div>
                     </motion.div>
                   )}
+
                   {activeTab === 'includes' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                       <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
@@ -230,7 +429,7 @@ export default function TourDetail() {
                             Dahil Olan
                           </h3>
                           <ul className="space-y-2">
-                            {(tour.included || []).map((item: string, idx: number) => (
+                            {(Array.isArray(tour.included_tr) ? tour.included_tr : []).map((item: string, idx: number) => (
                               <li key={idx} className="flex items-start gap-2 text-gray-600 text-sm sm:text-base">
                                 <FaCheck className="text-green-500 mt-1 flex-shrink-0 text-sm" />
                                 {item}
@@ -238,13 +437,14 @@ export default function TourDetail() {
                             ))}
                           </ul>
                         </div>
+
                         <div>
                           <h3 className="text-lg sm:text-xl font-bold text-primary mb-3 sm:mb-4 flex items-center gap-2">
                             <FaTimes className="text-red-500" />
                             Dahil Olmayan
                           </h3>
                           <ul className="space-y-2">
-                            {(tour.excluded || []).map((item: string, idx: number) => (
+                            {(Array.isArray(tour.excluded_tr) ? tour.excluded_tr : []).map((item: string, idx: number) => (
                               <li key={idx} className="flex items-start gap-2 text-gray-600 text-sm sm:text-base">
                                 <FaTimes className="text-red-500 mt-1 flex-shrink-0 text-sm" />
                                 {item}
@@ -255,50 +455,174 @@ export default function TourDetail() {
                       </div>
                     </motion.div>
                   )}
+
                   {activeTab === 'reviews' && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                      <div className="text-center mb-6 sm:mb-8">
-                        <div className="text-4xl sm:text-5xl font-bold text-primary mb-2">{average}</div>
-                        <div className="flex justify-center gap-1 mb-2">
-                          {[...Array(5)].map((_, i) => (
-                            <FaStar key={i} className="text-gold text-lg sm:text-xl" />
-                          ))}
-                        </div>
-                        <p className="text-gray-600 text-sm sm:text-base">{reviews.length} değerlendirme</p>
-                      </div>
-                      <div className="space-y-4 sm:space-y-6">
-                        {reviews.map((rev, idx) => (
-                          <div key={rev.id} className="border-b border-gray-200 pb-4 sm:pb-6 last:border-0">
-                            <div className="flex items-start gap-3 sm:gap-4 mb-3">
-                              <img
-                                src={randomAvatar(idx)}
-                                alt={rev.customer_name}
-                                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1 gap-2">
-                                  <h4 className="font-bold text-primary text-sm sm:text-base">{rev.customer_name}</h4>
-                                  <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                                    {rev.created_at.substring(0, 10)}
-                                  </span>
-                                </div>
-                                <div className="flex gap-1 mb-2">
-                                  {[...Array(rev.rating)].map((_, j) => (
-                                    <FaStar key={j} className="text-gold text-xs sm:text-sm" />
-                                  ))}
-                                </div>
-                                <p className="text-gray-600 text-sm sm:text-base">{rev.comment}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    {/* İSTATİSTİKLER */}
+    <div className="text-center mb-6 sm:mb-8">
+      <div className="text-4xl sm:text-5xl font-bold text-primary mb-2">{average}</div>
+      <div className="flex justify-center gap-1 mb-2">
+        {[...Array(5)].map((_, i) => (
+          <FaStar 
+            key={i} 
+            className={`text-xl ${i < Math.round(Number(average)) ? 'text-gold' : 'text-gray-300'}`} 
+          />
+        ))}
+      </div>
+      <p className="text-gray-600 text-sm sm:text-base">{reviews.length} değerlendirme</p>
+    </div>
+
+    {/* ✅ YORUM YAZMA FORMU - LOCATION EKLİ */}
+    <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+      <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-4">
+        ✍️ Deneyiminizi Paylaşın
+      </h3>
+      
+      <form onSubmit={handleReviewSubmit} className="space-y-4">
+        {/* İsim & Email */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              İsminiz *
+            </label>
+            <input
+              type="text"
+              required
+              value={reviewForm.name}
+              onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+              disabled={submittingReview}
+              placeholder="Adınız Soyadınız"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent disabled:bg-gray-100"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Email *
+            </label>
+            <input
+              type="email"
+              required
+              value={reviewForm.email}
+              onChange={(e) => setReviewForm({ ...reviewForm, email: e.target.value })}
+              disabled={submittingReview}
+              placeholder="email@example.com"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent disabled:bg-gray-100"
+            />
+          </div>
+        </div>
+
+        {/* ✅ LOCATION - YENİ ALAN */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Konum (Şehir, Ülke) *
+          </label>
+          <input
+            type="text"
+            required
+            value={reviewForm.location}
+            onChange={(e) => setReviewForm({ ...reviewForm, location: e.target.value })}
+            disabled={submittingReview}
+            placeholder="İstanbul, Türkiye"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent disabled:bg-gray-100"
+          />
+        </div>
+
+        {/* Rating */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Puanınız *
+          </label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setSelectedRating(star)}
+                disabled={submittingReview}
+                className="focus:outline-none transition-transform hover:scale-110 disabled:cursor-not-allowed"
+              >
+                <FaStar
+                  className={`text-3xl ${
+                    star <= selectedRating
+                      ? 'text-gold'
+                      : 'text-gray-300'
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Seçilen puan: {selectedRating} / 5
+          </p>
+        </div>
+
+        {/* Yorum */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Yorumunuz *
+          </label>
+          <textarea
+            required
+            value={reviewForm.comment}
+            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+            disabled={submittingReview}
+            placeholder="Bu tur hakkındaki düşüncelerinizi paylaşın..."
+            rows={4}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent disabled:bg-gray-100 resize-none"
+          ></textarea>
+          <p className="text-xs text-gray-500 mt-1">
+            Yorumunuz onaylandıktan sonra yayınlanacaktır.
+          </p>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={submittingReview}
+          className="w-full py-3 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {submittingReview ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Gönderiliyor...
+            </>
+          ) : (
+            <>
+              ✍️ Yorumu Gönder
+            </>
+          )}
+        </button>
+      </form>
+    </div>
+
+    {/* YORUMLAR LİSTESİ */}
+    <div className="mt-8">
+      <h3 className="text-2xl font-bold mb-6">Müşteri Yorumları</h3>
+      
+      <div className="space-y-4">
+        {reviews.map((review) => (
+          <ReviewCard key={review.id} review={review} />
+        ))}
+      </div>
+
+      {reviews.length === 0 && (
+        <div className="text-center py-12 bg-gray-50 rounded-xl">
+          <div className="text-6xl mb-4">💬</div>
+          <p className="text-gray-500 text-lg">
+            Henüz yorum yapılmamış. İlk yorumu siz yapın!
+          </p>
+        </div>
+      )}
+    </div>
+  </motion.div>
+)}
+
                 </div>
               </div>
             </div>
-            {/* SAĞ PANEL / REZERVASYON FORMU */}
+
+            {/* SAĞ PANEL */}
             <div className="lg:col-span-1">
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -320,6 +644,7 @@ export default function TourDetail() {
                     </div>
                     <p className="text-xs sm:text-sm text-white/80">Tüm vergiler dahil</p>
                   </div>
+
                   <form onSubmit={handleBooking} className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                     <div>
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Tarih Seçin</label>
@@ -328,23 +653,27 @@ export default function TourDetail() {
                         required
                         value={bookingData.date}
                         onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                        disabled={submitting}
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
                         min={new Date().toISOString().split('T')[0]}
                       />
                     </div>
+
                     <div>
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Misafir Sayısı</label>
                       <select
                         required
                         value={bookingData.guests}
                         onChange={(e) => setBookingData({ ...bookingData, guests: Number(e.target.value) })}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base bg-white"
+                        disabled={submitting}
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                       >
                         {[...Array(tour.max_group)].map((_, i) => (
                           <option key={i + 1} value={i + 1}>{i + 1} Kişi</option>
                         ))}
                       </select>
                     </div>
+
                     <div className="border-t border-gray-200 pt-3 sm:pt-4">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">İsim</label>
                       <input
@@ -352,10 +681,12 @@ export default function TourDetail() {
                         required
                         value={bookingData.name}
                         onChange={(e) => setBookingData({ ...bookingData, name: e.target.value })}
+                        disabled={submitting}
                         placeholder="Adınız Soyadınız"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                     </div>
+
                     <div>
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Email</label>
                       <input
@@ -363,10 +694,12 @@ export default function TourDetail() {
                         required
                         value={bookingData.email}
                         onChange={(e) => setBookingData({ ...bookingData, email: e.target.value })}
+                        disabled={submitting}
                         placeholder="email@example.com"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                     </div>
+
                     <div>
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Telefon</label>
                       <input
@@ -374,10 +707,12 @@ export default function TourDetail() {
                         required
                         value={bookingData.phone}
                         onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
+                        disabled={submitting}
                         placeholder="+90 5XX XXX XX XX"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                     </div>
+
                     <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
                       <div className="flex justify-between text-xs sm:text-sm">
                         <span className="text-gray-600">${tour.price} x {bookingData.guests} kişi</span>
@@ -389,19 +724,33 @@ export default function TourDetail() {
                       </div>
                       <div className="border-t border-gray-200 pt-2 flex justify-between">
                         <span className="font-bold text-primary text-sm sm:text-base">Toplam</span>
-                        <span className="font-bold text-xl sm:text-2xl text-primary">{`$${Number(tour.price) * bookingData.guests}`}</span>
+                        <span className="font-bold text-xl sm:text-2xl text-primary">${Number(tour.price) * bookingData.guests}</span>
                       </div>
                     </div>
+
                     <button
                       type="submit"
-                      className="w-full py-3 sm:py-4 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition text-base sm:text-lg"
+                      disabled={submitting}
+                      className="w-full py-3 sm:py-4 bg-gradient-to-r from-gold to-yellow-500 text-white font-bold rounded-lg hover:shadow-lg transition text-base sm:text-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Rezervasyon Yap
+                      {submitting ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Gönderiliyor...
+                        </>
+                      ) : (
+                        <>
+                          <FaCalendar />
+                          Rezervasyon Yap
+                        </>
+                      )}
                     </button>
+
                     <p className="text-xs text-gray-500 text-center">
                       Rezervasyon sonrası iptal ücretsizdir
                     </p>
                   </form>
+
                   <div className="border-t border-gray-200 p-4 sm:p-6 space-y-2 sm:space-y-3">
                     <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Yardıma mı ihtiyacınız var?</p>
                     <a
