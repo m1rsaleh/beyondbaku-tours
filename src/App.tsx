@@ -1,6 +1,7 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './contexts/ToastContext';
+import './i18n/config'; // ⭐️ i18n'i yükle
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -26,7 +27,8 @@ import MessagesManager from './pages/admin/messages/MessagesManager';
 import GalleryManager from './pages/admin/gallery/GalleryManager';
 import TranslationsManager from './pages/admin/translations/TranslationsManager';
 import Settings from './pages/admin/settings/Settings';
-import SubscriberManager from "./pages/admin/newsletter/SubscriberManager"
+import SubscriberManager from './pages/admin/newsletter/SubscriberManager';
+
 // Page Editors
 import HomePageEditor from './pages/admin/pages/HomePageEditor';
 import AboutPageEditor from './pages/admin/pages/AboutPageEditor';
@@ -61,62 +63,38 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            
-            {/* Tours */}
             <Route path="tours" element={<ToursManager />} />
             <Route path="tours/new" element={<TourForm />} />
             <Route path="tours/edit/:id" element={<TourForm />} />
-            
-            {/* Bookings */}
             <Route path="bookings" element={<BookingsManager />} />
             <Route path="bookings/:id" element={<BookingDetail />} />
-            
-            {/* Customers */}
             <Route path="customers" element={<CustomersManager />} />
             <Route path="customers/:id" element={<CustomerDetail />} />
-            
-            {/* Reviews */}
             <Route path="reviews" element={<ReviewsManager />} />
-            
-            {/* Blog */}
             <Route path="blog" element={<ContentManager />} />
             <Route path="blog/new" element={<BlogForm />} />
             <Route path="blog/edit/:id" element={<BlogForm />} />
-            
-            {/* Categories */}
             <Route path="categories" element={<CategoriesManager />} />
-            
-            {/* Messages */}
             <Route path="messages" element={<MessagesManager />} />
-            
-            {/* Gallery */}
             <Route path="gallery" element={<GalleryManager />} />
-            
-            {/* Translations */}
             <Route path="translations" element={<TranslationsManager />} />
-            
-            {/* Newsletter - DOĞRU YER */}
             <Route path="newsletter" element={<SubscriberManager />} />
-            
-            {/* Page Editors */}
             <Route path="pages/home" element={<HomePageEditor />} />
             <Route path="pages/about" element={<AboutPageEditor />} />
             <Route path="pages/contact" element={<ContactPageEditor />} />
             <Route path="pages/footer" element={<FooterEditor />} />
-            
-            {/* Settings */}
             <Route path="settings" element={<Settings />} />
           </Route>
 
           {/* Frontend Routes */}
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="tours" element={<Tours />} />
-            <Route path="tours/:id" element={<TourDetail />} />
-            <Route path="about" element={<About />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="blog" element={<Blog />} />
-            <Route path="blog/:slug" element={<BlogDetail />} />
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/tours" element={<Tours />} />
+            <Route path="/tours/:id" element={<TourDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
           </Route>
 
           {/* 404 */}

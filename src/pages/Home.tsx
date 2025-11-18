@@ -278,7 +278,7 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ delay: index * 0.15, type: "spring", stiffness: 100 }}
         >
-          <Link to={`/tour/${tour.id}`} className="group block">
+          <Link to={`/tours/${tour.id}`} className="group block">
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 h-full">
               <div className="relative h-64 sm:h-80 overflow-hidden">
                 <motion.img

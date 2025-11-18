@@ -1,3 +1,4 @@
+// src/services/translationService.ts
 // MyMemory API kullanıyoruz (ücretsiz, CORS yok, limit: 1000 karakter/istek)
 
 export const translationService = {
@@ -46,5 +47,11 @@ export const translationService = {
     }
     
     return results;
+  },
+
+  // ⭐️ HomePageEditor için boş fonksiyon (manuel input kullanıyoruz)
+  async translateContent(content: any): Promise<any> {
+    // Çeviri yapma, olduğu gibi döndür
+    return content;
   }
 };
