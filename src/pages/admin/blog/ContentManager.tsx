@@ -38,7 +38,7 @@ export default function ContentManager() {
       const data = await blogService.getAll();
       setPosts(data || []);
     } catch (err: any) {
-      showToast('error', 'Bloglar yüklenemedi!');
+      showToast('Bloglar yüklenemedi!','error');
     }
     setLoading(false);
   }
@@ -47,10 +47,10 @@ export default function ContentManager() {
     if (!window.confirm('Bu blog yazısını silmek istediğinizden emin misiniz?')) return;
     try {
       await blogService.delete(id);
-      showToast('success', 'Blog yazısı silindi!');
+      showToast('Blog yazısı silindi!', 'success');
       loadPosts();
     } catch (err: any) {
-      showToast('error', 'Silinemedi: ' + (err.message || err));
+      showToast('Silinemedi: ' + (err.message || err), 'error');
     }
   }
 
@@ -58,10 +58,10 @@ export default function ContentManager() {
     const newStatus = post.status === 'published' ? 'draft' : 'published';
     try {
       await blogService.update(post.id, { status: newStatus });
-      showToast('info', 'Durum güncellendi!');
+      showToast('Durum güncellendi!','info');
       loadPosts();
     } catch (err: any) {
-      showToast('error', 'Durum değiştirilemedi: ' + (err.message || err));
+      showToast('Durum değiştirilemedi: ' + (err.message || err), 'error');
     }
   }
 

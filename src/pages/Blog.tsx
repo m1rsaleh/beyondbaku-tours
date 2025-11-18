@@ -46,7 +46,7 @@ export default function Blog() {
       const data = await blogService.getAll();
       setPosts(data || []);
     } catch (error) {
-      showToast("error", "Blog yazıları yüklenirken hata oluştu");
+      showToast("Blog yazıları yüklenirken hata oluştu","error");
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function Blog() {
         ...(cats || []),
       ]);
     } catch (error) {
-      showToast("error", "Kategoriler yüklenirken hata oluştu");
+      showToast("Kategoriler yüklenirken hata oluştu", "error");
     }
   };
 

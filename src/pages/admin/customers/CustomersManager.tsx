@@ -1,54 +1,28 @@
-// src/pages/admin/customers/CustomersManager.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  totalBookings: number;
-  totalSpent: number;
-  lastBooking: string;
-  status: 'active' | 'inactive';
-}
+import { customerService, type Customer } from '../../../services/customerService';
 
 export default function CustomersManager() {
   const navigate = useNavigate();
-  const [customers] = useState<Customer[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+994 50 123 45 67',
-      totalBookings: 5,
-      totalSpent: 450,
-      lastBooking: '2025-11-20',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+994 50 234 56 78',
-      totalBookings: 3,
-      totalSpent: 280,
-      lastBooking: '2025-11-21',
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      phone: '+994 50 345 67 89',
-      totalBookings: 2,
-      totalSpent: 165,
-      lastBooking: '2025-11-22',
-      status: 'active'
-    }
-  ]);
-
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  async function loadCustomers() {
+    try {
+      setLoading(true);
+      const data = await customerService.getAllCustomers();
+      setCustomers(data);
+    } catch (error) {
+      console.error('Müşteriler yüklenemedi:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,8 +33,18 @@ export default function CustomersManager() {
     total: customers.length,
     active: customers.filter(c => c.status === 'active').length,
     totalRevenue: customers.reduce((sum, c) => sum + c.totalSpent, 0),
-    avgSpent: Math.round(customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length)
+    avgSpent: customers.length > 0 
+      ? Math.round(customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length)
+      : 0
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -162,11 +146,11 @@ export default function CustomersManager() {
                   </td>
                   <td className="px-6 py-4">
                     <button 
-  onClick={() => navigate(`/admin/customers/${customer.id}`)}
-  className="p-1.5 hover:bg-blue-50 text-blue-600 rounded transition-colors"
->
-  👁️ Detay
-</button>
+                      onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                      className="p-1.5 hover:bg-blue-50 text-blue-600 rounded transition-colors"
+                    >
+                      👁️ Detay
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -6,6 +6,7 @@ import {
   FaCheck, FaTimes, FaChevronLeft, FaChevronRight, FaWhatsapp,
   FaPhone, FaEnvelope
 } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import { tourService } from '../services/tourService';
 import { reviewService } from '../services/reviewService';
 import { bookingService } from '../services/bookingService';
@@ -13,11 +14,12 @@ import { useToast } from '../contexts/ToastContext';
 import type { Tour, Review } from '../types';
 import ReviewCard from '../components/ReviewCard';
 import { supabase } from '../lib/supabase';
+import { getLocalizedField as t_, getLocalizedArray } from '../utils/i18nHelper';
 
 export default function TourDetail() {
   const { id } = useParams();
   const { showToast } = useToast();
-  
+  const { t } = useTranslation();
   // Tour & Reviews State
   const [tour, setTour] = useState<Tour | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -279,7 +281,7 @@ const handleReviewSubmit = async (e: React.FormEvent) => {
           <motion.img
             key={currentImageIndex}
             src={getCurrentImage()}
-            alt={tour.title_tr}
+            alt={t_(tour, 'title')}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -338,8 +340,8 @@ const handleReviewSubmit = async (e: React.FormEvent) => {
                 </div>
               </div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-serif font-bold text-white mb-3 sm:mb-4">
-                {tour.title_tr}
-              </h1>
+  {t_(tour, 'title')}
+</h1>
               <div className="flex flex-wrap gap-3 sm:gap-4 lg:gap-6 text-white/90 text-sm sm:text-base">
                 <div className="flex items-center gap-2">
                   <FaClock className="text-gold" />
@@ -390,16 +392,18 @@ const handleReviewSubmit = async (e: React.FormEvent) => {
                   {activeTab === 'overview' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                       <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-3 sm:mb-4">Tur Hakkında</h3>
-                      <p className="text-gray-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">{tour.description_tr}</p>
+                      <p className="text-gray-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
+  {t_(tour, 'description')}
+</p>
                       <h4 className="text-lg sm:text-xl font-bold text-primary mb-3 sm:mb-4">Öne Çıkan Özellikler</h4>
                       <ul className="space-y-2 sm:space-y-3">
-                        {(Array.isArray(tour.features_tr) ? tour.features_tr : []).map((feature: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-2 sm:gap-3">
-                            <FaCheck className="text-gold mt-1 flex-shrink-0 text-sm" />
-                            <span className="text-gray-600 text-sm sm:text-base">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
+  {getLocalizedArray(tour, 'features').map((feature: string, idx: number) => (
+    <li key={idx} className="flex items-start gap-2 sm:gap-3">
+      <FaCheck className="text-gold mt-1 flex-shrink-0 text-sm" />
+      <span className="text-gray-600 text-sm sm:text-base">{feature}</span>
+    </li>
+  ))}
+</ul>
                     </motion.div>
                   )}
 
@@ -407,15 +411,15 @@ const handleReviewSubmit = async (e: React.FormEvent) => {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                       <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-4 sm:mb-6">Günlük Program</h3>
                       <div className="space-y-4 sm:space-y-6">
-                        {(Array.isArray(tour.itinerary_tr) ? tour.itinerary_tr : []).map((day: any, idx: number) => (
-                          <div key={idx} className="relative pl-6 sm:pl-8 border-l-2 border-gold pb-4 sm:pb-6 last:pb-0">
-                            <div className="absolute -left-2.5 sm:-left-3 top-0 w-5 h-5 sm:w-6 sm:h-6 bg-gold rounded-full border-4 border-white"></div>
-                            <h4 className="text-base sm:text-lg font-bold text-primary mb-2">
-                              Gün {idx + 1}: {day.title}
-                            </h4>
-                            <p className="text-gray-600 text-sm sm:text-base">{day.description}</p>
-                          </div>
-                        ))}
+                        {getLocalizedArray(tour, 'itinerary').map((day: any, idx: number) => (
+  <div key={idx} className="relative pl-6 sm:pl-8 border-l-2 border-gold pb-4 sm:pb-6 last:pb-0">
+    <div className="absolute -left-2.5 sm:-left-3 top-0 w-5 h-5 sm:w-6 sm:h-6 bg-gold rounded-full border-4 border-white"></div>
+    <h4 className="text-base sm:text-lg font-bold text-primary mb-2">
+      Gün {idx + 1}: {day.title}
+    </h4>
+    <p className="text-gray-600 text-sm sm:text-base">{day.description}</p>
+  </div>
+))}
                       </div>
                     </motion.div>
                   )}
@@ -429,11 +433,11 @@ const handleReviewSubmit = async (e: React.FormEvent) => {
                             Dahil Olan
                           </h3>
                           <ul className="space-y-2">
-                            {(Array.isArray(tour.included_tr) ? tour.included_tr : []).map((item: string, idx: number) => (
-                              <li key={idx} className="flex items-start gap-2 text-gray-600 text-sm sm:text-base">
-                                <FaCheck className="text-green-500 mt-1 flex-shrink-0 text-sm" />
-                                {item}
-                              </li>
+                           {getLocalizedArray(tour, 'included').map((item: string, idx: number) => (
+  <li key={idx} className="flex items-start gap-2 text-gray-600 text-sm sm:text-base">
+    <FaCheck className="text-green-500 mt-1 flex-shrink-0 text-sm" />
+    {item}
+  </li>
                             ))}
                           </ul>
                         </div>
@@ -444,11 +448,11 @@ const handleReviewSubmit = async (e: React.FormEvent) => {
                             Dahil Olmayan
                           </h3>
                           <ul className="space-y-2">
-                            {(Array.isArray(tour.excluded_tr) ? tour.excluded_tr : []).map((item: string, idx: number) => (
-                              <li key={idx} className="flex items-start gap-2 text-gray-600 text-sm sm:text-base">
-                                <FaTimes className="text-red-500 mt-1 flex-shrink-0 text-sm" />
-                                {item}
-                              </li>
+                            {getLocalizedArray(tour, 'excluded').map((item: string, idx: number) => (
+  <li key={idx} className="flex items-start gap-2 text-gray-600 text-sm sm:text-base">
+    <FaTimes className="text-red-500 mt-1 flex-shrink-0 text-sm" />
+    {item}
+  </li>
                             ))}
                           </ul>
                         </div>

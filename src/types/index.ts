@@ -370,3 +370,37 @@ export interface HomePageContent {
     feature4: string;
   };
 }
+
+// Settings Types
+export interface GeneralSettings {
+  siteName: string;
+  siteTitle: string;
+  siteDescription: string;
+  defaultLanguage: string;
+  timezone: string;
+}
+
+export interface ContactSettings {
+  email: string;
+  phone: string;
+  whatsapp: string;
+  address: string;
+  workingHours: string;
+}
+
+export interface SocialSettings {
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  youtube: string;
+}
+
+export interface SettingsRecord {
+  id: string;
+  key: string;
+  value: GeneralSettings | ContactSettings | SocialSettings;
+  category: string;
+  updated_at: string;
+  created_at: string;
+}
+

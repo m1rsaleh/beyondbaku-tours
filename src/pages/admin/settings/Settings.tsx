@@ -1,30 +1,35 @@
-// src/pages/admin/settings/Settings.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useToast } from '../../../contexts/ToastContext';
+import { settingsService } from '../../../services/settingsService';
+import type { GeneralSettings, ContactSettings, SocialSettings } from '../../../types';
 
 export default function Settings() {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'social' | 'email'>('general');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const [generalSettings, setGeneralSettings] = useState({
-    siteName: 'Beyond Baku Tours',
-    siteTitle: 'Beyond Baku - Azerbaijan Tours & Travel',
-    siteDescription: 'Discover Azerbaijan with expert guides',
+  const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
+    siteName: '',
+    siteTitle: '',
+    siteDescription: '',
     defaultLanguage: 'tr',
     timezone: 'Asia/Baku'
   });
 
-  const [contactSettings, setContactSettings] = useState({
-    email: 'info@beyondbaku.com',
-    phone: '+994 50 123 45 67',
-    whatsapp: '+994 50 123 45 67',
-    address: 'Baku, Azerbaijan',
-    workingHours: '09:00 - 18:00'
+  const [contactSettings, setContactSettings] = useState<ContactSettings>({
+    email: '',
+    phone: '',
+    whatsapp: '',
+    address: '',
+    workingHours: ''
   });
 
-  const [socialSettings, setSocialSettings] = useState({
-    facebook: 'https://facebook.com/beyondbaku',
-    instagram: 'https://instagram.com/beyondbaku',
-    twitter: 'https://twitter.com/beyondbaku',
-    youtube: 'https://youtube.com/@beyondbaku'
+  const [socialSettings, setSocialSettings] = useState<SocialSettings>({
+    facebook: '',
+    instagram: '',
+    twitter: '',
+    youtube: ''
   });
 
   const tabs = [
@@ -34,9 +39,60 @@ export default function Settings() {
     { id: 'email', name: 'E-posta Ayarları', icon: '📧' }
   ];
 
-  const handleSave = () => {
-    alert('Ayarlar kaydedildi!');
-  };
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    try {
+      setLoading(true);
+      const allSettings = await settingsService.getAllSettings();
+
+      allSettings.forEach((setting: any) => {
+        if (setting.key === 'general') {
+          setGeneralSettings(setting.value as GeneralSettings);
+        } else if (setting.key === 'contact') {
+          setContactSettings(setting.value as ContactSettings);
+        } else if (setting.key === 'social') {
+          setSocialSettings(setting.value as SocialSettings);
+        }
+      });
+    } catch (error) {
+      showToast('Ayarlar yüklenirken hata oluştu!', 'error');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+
+      if (activeTab === 'general') {
+        await settingsService.updateSettings('general', generalSettings, 'general');
+      } else if (activeTab === 'contact') {
+        await settingsService.updateSettings('contact', contactSettings, 'contact');
+      } else if (activeTab === 'social') {
+        await settingsService.updateSettings('social', socialSettings, 'social');
+      }
+
+      showToast('Ayarlar başarıyla kaydedildi!', 'success');
+    } catch (error) {
+      showToast('Ayarlar kaydedilirken hata oluştu!', 'error');
+      console.error(error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -254,9 +310,10 @@ export default function Settings() {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <button
           onClick={handleSave}
-          className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+          disabled={saving}
+          className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          💾 Değişiklikleri Kaydet
+          {saving ? '⏳ Kaydediliyor...' : '💾 Değişiklikleri Kaydet'}
         </button>
       </div>
     </div>

@@ -1,33 +1,27 @@
-// Modern ve geliştirilmiş Dashboard.tsx
 import { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Calendar, 
   Users, 
   DollarSign, 
-  TrendingUp, 
-  TrendingDown,
-  Eye,
-  MessageSquare,
-  Star,
   Activity,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { 
   LineChart, 
   Line, 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
+  ResponsiveContainer
 } from 'recharts';
+import { tourService } from '../../services/tourService';
+import { bookingService } from '../../services/bookingService';
+import { supabase } from '../../lib/supabase';
 
 interface DashboardStats {
   totalTours: number;
@@ -46,7 +40,7 @@ interface ChartData {
 
 interface Activity {
   id: string;
-  type: 'booking' | 'review' | 'tour' | 'user';
+  type: 'booking' | 'review' | 'tour';
   message: string;
   time: string;
   user: string;
@@ -68,65 +62,147 @@ export default function Dashboard() {
     pendingReviews: 0
   });
 
-  const [chartData] = useState<ChartData[]>([
-    { name: 'Oca', bookings: 45, revenue: 2400 },
-    { name: 'Şub', bookings: 52, revenue: 2800 },
-    { name: 'Mar', bookings: 61, revenue: 3200 },
-    { name: 'Nis', bookings: 58, revenue: 3100 },
-    { name: 'May', bookings: 70, revenue: 3800 },
-    { name: 'Haz', bookings: 85, revenue: 4500 },
-    { name: 'Tem', bookings: 95, revenue: 5200 },
-  ]);
-
-  const [popularTours] = useState<PopularTour[]>([
-    { name: 'Gobustan & Mud Volcanoes', bookings: 234, revenue: 10530 },
-    { name: 'Baku City Tour', bookings: 189, revenue: 6615 },
-    { name: 'Gabala Adventure', bookings: 156, revenue: 7020 },
-    { name: 'Sheki Culture Tour', bookings: 142, revenue: 6390 },
-  ]);
-
-  const [recentActivities] = useState<Activity[]>([
-    {
-      id: '1',
-      type: 'booking',
-      message: 'Gobustan Tour için yeni rezervasyon',
-      time: '5 dakika önce',
-      user: 'John Doe'
-    },
-    {
-      id: '2',
-      type: 'review',
-      message: 'Baku City Tour için 5 yıldız aldı',
-      time: '15 dakika önce',
-      user: 'Jane Smith'
-    },
-    {
-      id: '3',
-      type: 'tour',
-      message: 'Yeni tur eklendi: Shamakhi Wine Tour',
-      time: '1 saat önce',
-      user: 'Admin'
-    },
-    {
-      id: '4',
-      type: 'user',
-      message: 'Yeni kullanıcı kaydı',
-      time: '2 saat önce',
-      user: 'Mike Johnson'
-    }
-  ]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [popularTours, setPopularTours] = useState<PopularTour[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // API'den verileri çek
-    setStats({
-      totalTours: 24,
-      totalBookings: 487,
-      totalRevenue: 52480,
-      activeUsers: 342,
-      avgRating: 4.7,
-      pendingReviews: 12
-    });
+    loadDashboardData();
   }, []);
+
+  async function loadDashboardData() {
+    try {
+      setLoading(true);
+
+      // 1. Turlar
+      const tours = await tourService.getAllTours();
+      
+      // 2. Rezervasyonlar
+      const bookings = await bookingService.getAllBookings();
+      
+      // 3. Yorumlar
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('*');
+
+      // İstatistikleri hesapla
+      const totalRevenue = bookings.reduce((sum, b) => sum + b.total_price, 0);
+      const uniqueCustomers = new Set(bookings.map(b => b.email)).size;
+      const avgRating = reviews && reviews.length > 0 
+        ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length 
+        : 0;
+      const pendingReviews = reviews?.filter((r: any) => r.status === 'pending').length || 0;
+
+      setStats({
+        totalTours: tours.length,
+        totalBookings: bookings.length,
+        totalRevenue,
+        activeUsers: uniqueCustomers,
+        avgRating: parseFloat(avgRating.toFixed(1)),
+        pendingReviews
+      });
+
+      // Aylık grafik verisi (son 7 ay)
+      const monthlyData = generateMonthlyData(bookings);
+      setChartData(monthlyData);
+
+      // Popüler turlar
+      const tourStats = calculatePopularTours(bookings);
+      setPopularTours(tourStats);
+
+      // Son aktiviteler
+      const activities = generateRecentActivities(bookings, reviews || []);
+      setRecentActivities(activities);
+
+    } catch (error) {
+      console.error('Dashboard veriler yüklenemedi:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function generateMonthlyData(bookings: any[]): ChartData[] {
+    const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem'];
+    const now = new Date();
+    
+    return months.map((month, index) => {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - (6 - index), 1);
+      const monthBookings = bookings.filter(b => {
+        const bookingDate = new Date(b.created_at);
+        return bookingDate.getMonth() === monthDate.getMonth() &&
+               bookingDate.getFullYear() === monthDate.getFullYear();
+      });
+
+      return {
+        name: month,
+        bookings: monthBookings.length,
+        revenue: monthBookings.reduce((sum, b) => sum + b.total_price, 0)
+      };
+    });
+  }
+
+  function calculatePopularTours(bookings: any[]): PopularTour[] {
+    const tourMap = new Map<string, { bookings: number; revenue: number }>();
+
+    bookings.forEach(booking => {
+      const tourName = booking.tour?.title_tr || 'Bilinmeyen Tur';
+      const existing = tourMap.get(tourName) || { bookings: 0, revenue: 0 };
+      
+      tourMap.set(tourName, {
+        bookings: existing.bookings + 1,
+        revenue: existing.revenue + booking.total_price
+      });
+    });
+
+    return Array.from(tourMap.entries())
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 4);
+  }
+
+  function generateRecentActivities(bookings: any[], reviews: any[]): Activity[] {
+    const activities: Activity[] = [];
+
+    // Son 5 rezervasyon
+    bookings.slice(0, 5).forEach(booking => {
+      activities.push({
+        id: booking.id,
+        type: 'booking',
+        message: `${booking.tour?.title_tr || 'Tur'} için yeni rezervasyon`,
+        time: getTimeAgo(booking.created_at),
+        user: booking.customer_name
+      });
+    });
+
+    // Son 5 yorum
+    reviews.slice(0, 5).forEach((review: any) => {
+      activities.push({
+        id: review.id,
+        type: 'review',
+        message: `${review.rating} yıldız değerlendirme aldı`,
+        time: getTimeAgo(review.created_at),
+        user: review.customer_name
+      });
+    });
+
+    return activities
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+      .slice(0, 8);
+  }
+
+  function getTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${diffMins} dakika önce`;
+    if (diffHours < 24) return `${diffHours} saat önce`;
+    return `${diffDays} gün önce`;
+  }
 
   const statCards = [
     {
@@ -162,8 +238,8 @@ export default function Dashboard() {
     {
       title: 'Aktif Kullanıcılar',
       value: stats.activeUsers,
-      change: '-3%',
-      trend: 'down',
+      change: '+5%',
+      trend: 'up',
       icon: Users,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50',
@@ -171,7 +247,13 @@ export default function Dashboard() {
     }
   ];
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
@@ -186,7 +268,10 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600">Son güncelleme</p>
             <p className="text-xs text-gray-500">Bugün, {new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
-          <button className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={loadDashboardData}
+            className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
             <Activity className="w-5 h-5" />
           </button>
         </div>
@@ -232,11 +317,6 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold text-gray-900">Gelir Trendi</h2>
               <p className="text-sm text-gray-600 mt-1">Son 7 aylık gelir analizi</p>
             </div>
-            <select className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option>Son 7 Ay</option>
-              <option>Son 30 Gün</option>
-              <option>Bu Yıl</option>
-            </select>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
@@ -270,7 +350,7 @@ export default function Dashboard() {
             {popularTours.map((tour, index) => (
               <div key={index} className="group">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors truncate">
                     {tour.name}
                   </span>
                   <span className="text-xs font-semibold text-gray-500">{tour.bookings}</span>
@@ -278,7 +358,7 @@ export default function Dashboard() {
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div 
                     className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-blue-500 to-blue-600"
-                    style={{ width: `${(tour.bookings / popularTours[0].bookings) * 100}%` }}
+                    style={{ width: `${popularTours[0] ? (tour.bookings / popularTours[0].bookings) * 100 : 0}%` }}
                   />
                 </div>
                 <div className="flex justify-between mt-1">
@@ -296,25 +376,20 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Son Aktiviteler</h2>
-            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              Tümünü Gör
-            </button>
           </div>
           <div className="space-y-4">
-            {recentActivities.map((activity) => (
+            {recentActivities.slice(0, 6).map((activity) => (
               <div 
                 key={activity.id} 
                 className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors group"
               >
                 <div className={`p-2 rounded-lg ${
                   activity.type === 'booking' ? 'bg-blue-100' :
-                  activity.type === 'review' ? 'bg-yellow-100' :
-                  activity.type === 'tour' ? 'bg-green-100' : 'bg-purple-100'
+                  activity.type === 'review' ? 'bg-yellow-100' : 'bg-green-100'
                 }`}>
                   {activity.type === 'booking' ? <Calendar className="w-5 h-5 text-blue-600" /> :
                    activity.type === 'review' ? <Star className="w-5 h-5 text-yellow-600" /> :
-                   activity.type === 'tour' ? <MapPin className="w-5 h-5 text-green-600" /> :
-                   <Users className="w-5 h-5 text-purple-600" />}
+                   <MapPin className="w-5 h-5 text-green-600" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -349,7 +424,10 @@ export default function Dashboard() {
             </div>
             <h3 className="text-4xl font-bold text-gray-900 mb-2">{stats.pendingReviews}</h3>
             <p className="text-gray-600">Onay Bekleyen Yorum</p>
-            <button className="mt-4 w-full py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-medium text-sm">
+            <button 
+              onClick={() => window.location.href = '/admin/reviews'}
+              className="mt-4 w-full py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors font-medium text-sm"
+            >
               İncele
             </button>
           </div>

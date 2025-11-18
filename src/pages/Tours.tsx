@@ -2,9 +2,65 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaStar, FaClock, FaUsers, FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next'; // ⭐️ EKLE
 import { tourService } from '../services/tourService';
 import { supabase } from '../lib/supabase';
+import { getLocalizedField as t_ } from '../utils/i18nHelper';
+import i18n from 'i18next';
 import type { Tour } from '../types';
+/**
+ * Backend'den gelen çok dilli alanlardan doğru dili seçer
+ * Örnek: getLocalizedField(tour, 'title') -> title_az veya title_en döner
+ */
+export function getLocalizedField(
+  item: any,
+  fieldName: string,
+  fallback: string = ''
+): string {  // ⭐️ T yerine string
+  const lang = i18n.language || 'az';
+  
+  // Önce mevcut dil için dene
+  const field = `${fieldName}_${lang}`;
+  if (item && item[field]) {
+    return item[field];  // ⭐️ as T kaldırıldı
+  }
+  
+  // Fallback sırası: az -> en -> ru -> tr
+  const fallbackLangs = ['az', 'en', 'ru', 'tr'];
+  for (const fallbackLang of fallbackLangs) {
+    const fallbackField = `${fieldName}_${fallbackLang}`;
+    if (item && item[fallbackField]) {
+      return item[fallbackField];  // ⭐️ as T kaldırıldı
+    }
+  }
+  
+  // Hiçbir dil yoksa varsayılan değer
+  return item?.[fieldName] || fallback;  // ⭐️ as T kaldırıldı
+}
+
+/**
+ * Array alanlarda kullanım (features, included, excluded vb.)
+ */
+export function getLocalizedArray(item: any, fieldName: string): string[] {
+  const lang = i18n.language || 'az';
+  const field = `${fieldName}_${lang}`;
+  
+  if (item && Array.isArray(item[field]) && item[field].length > 0) {
+    return item[field];
+  }
+  
+  // Fallback
+  const fallbackLangs = ['az', 'en', 'ru', 'tr'];
+  for (const fallbackLang of fallbackLangs) {
+    const fallbackField = `${fieldName}_${fallbackLang}`;
+    if (item && Array.isArray(item[fallbackField]) && item[fallbackField].length > 0) {
+      return item[fallbackField];
+    }
+  }
+  
+  return item?.[fieldName] || [];
+}
+
 
 interface Category {
   id: string;
@@ -13,6 +69,7 @@ interface Category {
 }
 
 export default function Tours() {
+  const { t, i18n } = useTranslation(); // ⭐️ EKLE - i18n objesi
   const [tours, setTours] = useState<Tour[]>([]);
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -27,10 +84,10 @@ export default function Tours() {
     fetchCategories();
   }, []);
 
+  // ⭐️ YENİ: Dil değiştiğinde filtrelemeyi yenile
   useEffect(() => {
     filterTours();
-    // eslint-disable-next-line
-  }, [tours, searchTerm, selectedCategory, priceRange, sortBy]);
+  }, [tours, searchTerm, selectedCategory, priceRange, sortBy, i18n.language]); // i18n.language ekle
 
   async function fetchTours() {
     setLoading(true);
@@ -43,20 +100,22 @@ export default function Tours() {
     }
   }
 
- async function fetchCategories() {
-  const { data } = await supabase.from('categories').select('id, name_tr, slug').order('name_tr');
-  if (data) setCategories(data); // Category interface: { id: string, name_tr: string, slug: string }
-}
+  async function fetchCategories() {
+    const { data } = await supabase.from('tour_categories').select('id, name_tr, slug').order('name_tr');
+    if (data) setCategories(data);
+  }
 
   function filterTours() {
     let filtered = [...tours];
 
-    // Search
+    // Search - ⭐️ Çok dilli arama
     if (searchTerm) {
-      filtered = filtered.filter(tour =>
-        tour.title_tr.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tour.location.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(tour => {
+        const title = getLocalizedField(tour, 'title', '').toLowerCase();
+        const description = getLocalizedField(tour, 'description', '').toLowerCase();
+        const search = searchTerm.toLowerCase();
+        return title.includes(search) || description.includes(search) || tour.location.toLowerCase().includes(search);
+      });
     }
 
     // Category
@@ -93,7 +152,7 @@ export default function Tours() {
 
   return (
     <div className="bg-cream min-h-screen">
-       {/* Hero Header */}
+      {/* Hero Header */}
       <section className="relative h-[40vh] sm:h-[50vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
@@ -114,10 +173,10 @@ export default function Tours() {
               Discover Azerbaijan
             </p>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold mb-4 sm:mb-6">
-              Premium <span className="text-gold">Turlar</span>
+              Premium <span className="text-gold">{t('tours.title')}</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-2xl mx-auto px-4">
-              Size özel tasarlanmış unutulmaz deneyimler
+              {t('tours.subtitle')}
             </p>
           </motion.div>
         </div>
@@ -138,7 +197,7 @@ export default function Tours() {
                 <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Tur veya destinasyon ara..."
+                  placeholder={t('tours.search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold focus:border-transparent text-sm sm:text-base"
@@ -149,13 +208,15 @@ export default function Tours() {
             {/* Filters */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div>
-                <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">Kategori</label>
+                <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">
+                  {t('tours.category')}
+                </label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm"
                 >
-                  <option value="all">Tümü</option>
+                  <option value="all">{t('tours.all')}</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.slug}>
                       {cat.name_tr}
@@ -164,13 +225,15 @@ export default function Tours() {
                 </select>
               </div>
               <div>
-                <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">Fiyat Aralığı</label>
+                <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">
+                  {t('tours.priceRange')}
+                </label>
                 <select
                   value={priceRange}
                   onChange={(e) => setPriceRange(e.target.value)}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm"
                 >
-                  <option value="all">Tümü</option>
+                  <option value="all">{t('tours.all')}</option>
                   <option value="0-100">$0 - $100</option>
                   <option value="100-200">$100 - $200</option>
                   <option value="200-500">$200 - $500</option>
@@ -178,16 +241,18 @@ export default function Tours() {
                 </select>
               </div>
               <div>
-                <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">Sıralama</label>
+                <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-2 block">
+                  {t('tours.sort')}
+                </label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent text-sm"
                 >
-                  <option value="popular">Popüler</option>
-                  <option value="price-low">Fiyat (Düşük)</option>
-                  <option value="price-high">Fiyat (Yüksek)</option>
-                  <option value="duration">Süre</option>
+                  <option value="popular">{t('tours.popular')}</option>
+                  <option value="price-low">{t('tours.priceLow')}</option>
+                  <option value="price-high">{t('tours.priceHigh')}</option>
+                  <option value="duration">{t('tours.duration')}</option>
                 </select>
               </div>
               <div className="flex items-end">
@@ -200,18 +265,19 @@ export default function Tours() {
                   }}
                   className="w-full px-4 py-2 sm:py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition text-sm"
                 >
-                  Filtreleri Temizle
+                  {t('tours.clearFilters')}
                 </button>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="text-sm text-gray-600">
-                <span className="font-bold text-primary">{filteredTours.length}</span> tur bulundu
+                <span className="font-bold text-primary">{filteredTours.length}</span> {t('tours.found')}
               </p>
             </div>
           </motion.div>
         </div>
       </section>
+
       {/* Tours Grid */}
       <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6">
@@ -229,7 +295,7 @@ export default function Tours() {
             </div>
           ) : filteredTours.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-2xl text-gray-500 mb-4">Tur bulunamadı</p>
+              <p className="text-2xl text-gray-500 mb-4">{t('tours.noTours')}</p>
               <button
                 onClick={() => {
                   setSearchTerm('');
@@ -238,11 +304,10 @@ export default function Tours() {
                 }}
                 className="px-6 py-3 bg-gold text-white rounded-full hover:bg-gold/90 transition"
               >
-                Filtreleri Temizle
+                {t('tours.clearFilters')}
               </button>
             </div>
           ) : (
-            
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredTours.map((tour, index) => (
                 <motion.div
@@ -255,14 +320,14 @@ export default function Tours() {
                     <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 h-full">
                       <div className="relative h-64 sm:h-80 overflow-hidden">
                         <img
-                         src={tour.image || 'https://via.placeholder.com/400x300'}
-                          alt={tour.title_tr}
+                          src={tour.image || tour.images?.[0] || 'https://via.placeholder.com/400x300'}
+                          alt={t_(tour, 'title')}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
                         <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-white/95 backdrop-blur-sm rounded-full px-4 sm:px-5 py-2 sm:py-2.5">
                           <span className="text-xl sm:text-2xl font-bold text-primary">${tour.price}</span>
-                          <p className="text-[10px] sm:text-xs text-gray-500">/ kişi</p>
+                          <p className="text-[10px] sm:text-xs text-gray-500">/ {t('tours.perPerson')}</p>
                         </div>
                         <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
                           <FaMapMarkerAlt className="text-gold" />
@@ -270,11 +335,13 @@ export default function Tours() {
                         </div>
                       </div>
                       <div className="p-6 sm:p-8">
+                        {/* ⭐️ Çok dilli başlık */}
                         <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-3 sm:mb-4 group-hover:text-gold transition leading-tight">
-                          {tour.title_tr}
+                          {t_(tour, 'title')}
                         </h3>
+                        {/* ⭐️ Çok dilli açıklama */}
                         <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 line-clamp-2 leading-relaxed">
-                          {tour.description_tr}
+                          {t_(tour, 'description')}
                         </p>
                         <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-gray-100">
                           <div className="flex items-center gap-3 sm:gap-4">

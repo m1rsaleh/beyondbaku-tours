@@ -95,7 +95,8 @@ function App() {
             {/* Translations */}
             <Route path="translations" element={<TranslationsManager />} />
             
-            <Route path="/admin/newsletter" element={<SubscriberManager />} />
+            {/* Newsletter - DOĞRU YER */}
+            <Route path="newsletter" element={<SubscriberManager />} />
             
             {/* Page Editors */}
             <Route path="pages/home" element={<HomePageEditor />} />

@@ -1,14 +1,39 @@
-import i18n from 'i18next'
-import { initReactI18next } from 'react-i18next'
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import { translations } from './translations';
 
-i18n.use(initReactI18next).init({
-  resources: {
-    tr: { translation: { nav: { home: 'Ana Sayfa', tours: 'Turlar', about: 'Hakkımızda', contact: 'İletişim' }}},
-    en: { translation: { nav: { home: 'Home', tours: 'Tours', about: 'About', contact: 'Contact' }}}
-  },
-  lng: 'tr',
-  fallbackLng: 'tr',
-  interpolation: { escapeValue: false }
-})
+i18n
+  .use(LanguageDetector) // Tarayıcı dilini otomatik algıla
+  .use(initReactI18next)
+  .init({
+    resources: {
+      tr: { translation: translations.tr },
+      en: { translation: translations.en },
+      ru: { translation: translations.ru },
+      az: { translation: translations.az }
+    },
+    fallbackLng: 'az', // Varsayılan dil Azerbaycan
+    lng: localStorage.getItem('language') || 'az', // Kaydedilmiş dili yükle
+    
+    detection: {
+      order: ['localStorage', 'navigator', 'htmlTag'],
+      caches: ['localStorage']
+    },
 
-export default i18n
+    interpolation: {
+      escapeValue: false
+    },
+
+    react: {
+      useSuspense: false
+    }
+  });
+
+// Dil değiştiğinde localStorage'a kaydet
+i18n.on('languageChanged', (lng) => {
+  localStorage.setItem('language', lng);
+  document.documentElement.lang = lng;
+});
+
+export default i18n;

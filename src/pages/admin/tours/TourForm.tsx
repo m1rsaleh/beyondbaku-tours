@@ -5,6 +5,7 @@ import { tourService } from '../../../services/tourService';
 import type { Tour } from '../../../types';
 import { imageService } from '../../../services/imageService';
 import { supabase } from '../../../lib/supabase';
+import { translationService } from '../../../services/translationService';
 
 // Hem form state'in hem de tipteki alanlar birebir eşleşmeli!
 type TourFormData = {
@@ -316,469 +317,205 @@ const handleSubmit = async (e: React.FormEvent) => {
         </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-6">
-  {/* Language Tabs */}
-  <div className="bg-white rounded-xl shadow-sm p-6">
-    <h2 className="text-lg font-semibold text-gray-900 mb-4">Dil Seçimi</h2>
-    <div className="flex gap-2">
-      <button type="button" onClick={() => setActiveTab('tr')}
-        className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'tr' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-        🇹🇷 Türkçe
-      </button>
-      <button type="button" onClick={() => setActiveTab('en')}
-        className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-        🇬🇧 English
-      </button>
-      <button type="button" onClick={() => setActiveTab('ru')}
-        className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'ru' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-        🇷🇺 Русский
-      </button>
-      <button type="button" onClick={() => setActiveTab('az')}
-        className={`px-6 py-2 rounded-lg font-medium transition-colors ${activeTab === 'az' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-        🇦🇿 Azərbaycan
-      </button>
+  
+
+  {/* TAB BAŞLIKLARI */}
+<div className="flex space-x-2 border-b border-gray-200 mb-6 overflow-x-auto">
+  <button
+    type="button"
+    onClick={() => setActiveTab('tr')}
+    className={`px-6 py-3 font-semibold text-sm whitespace-nowrap ${
+      activeTab === 'tr'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+    }`}
+  >
+    🇹🇷 Türkçe
+  </button>
+  <button
+    type="button"
+    onClick={() => setActiveTab('az')}
+    className={`px-6 py-3 font-semibold text-sm whitespace-nowrap ${
+      activeTab === 'az'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+    }`}
+  >
+    🇦🇿 Azərbaycan
+  </button>
+  <button
+    type="button"
+    onClick={() => setActiveTab('en')}
+    className={`px-6 py-3 font-semibold text-sm whitespace-nowrap ${
+      activeTab === 'en'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+    }`}
+  >
+    🇬🇧 English
+  </button>
+  <button
+    type="button"
+    onClick={() => setActiveTab('ru')}
+    className={`px-6 py-3 font-semibold text-sm whitespace-nowrap ${
+      activeTab === 'ru'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+    }`}
+  >
+    🇷🇺 Русский
+  </button>
+</div>
+
+{/* TÜRKÇE TAB */}
+{activeTab === 'tr' && (
+  <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+    <h2 className="text-lg font-semibold text-gray-900 mb-4">Türkçe İçerik</h2>
+    
+    {/* Başlık */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Tur Başlığı (TR) <span className="text-red-500">*</span>
+      </label>
+      <input 
+        type="text" 
+        name="title" 
+        value={formData.title} 
+        onChange={handleChange} 
+        required
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Örn: Gobustan ve Palçıq Vulkanları Turu" 
+      />
+    </div>
+    
+    {/* Açıklama */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Açıklama (TR) <span className="text-red-500">*</span>
+      </label>
+      <textarea 
+        name="description" 
+        value={formData.description} 
+        onChange={handleChange} 
+        required 
+        rows={6}
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Turun detaylı açıklaması..." 
+      />
     </div>
   </div>
+)}
 
-  {/* Türkçe */}
-  {activeTab === 'tr' && (
-    <>
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Türkçe İçerik</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tur Başlığı (TR) *</label>
-          <input 
-            type="text" 
-            name="title" 
-            value={formData.title} 
-            onChange={handleChange} 
-            required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Örn: Gobustan & Mud Volcanoes Tour" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Açıklama (TR) *</label>
-          <textarea 
-            name="description" 
-            value={formData.description} 
-            onChange={handleChange} 
-            required 
-            rows={6}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Turun detaylı açıklaması..." 
-          />
-        </div>
-      </div>
+{/* AZERBAYCAN TAB */}
+{activeTab === 'az' && (
+  <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+    <h2 className="text-lg font-semibold text-gray-900 mb-4">Azərbaycan Dili</h2>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Tur Başlığı (AZ) <span className="text-red-500">*</span>
+      </label>
+      <input 
+        type="text" 
+        name="titleAZ" 
+        value={formData.titleAZ} 
+        onChange={handleChange} 
+        required
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Məs: Qobustan və Palçıq Vulkanları Turu" 
+      />
+    </div>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Açıklama (AZ) <span className="text-red-500">*</span>
+      </label>
+      <textarea 
+        name="descriptionAZ" 
+        value={formData.descriptionAZ} 
+        onChange={handleChange} 
+        required 
+        rows={6}
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Turun ətraflı təsviri..." 
+      />
+    </div>
+  </div>
+)}
 
-      {/* ÖNE ÇIKAN ÖZELLİKLER (TR) */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Öne Çıkan Özellikler (TR)</h2>
-        {formData.features.map((feature, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input
-              type="text"
-              value={feature}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newFeatures = [...formData.features];
-                newFeatures[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, features: newFeatures }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Örn: Profesyonel rehber"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const newFeatures = formData.features.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, features: newFeatures }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              Sil
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setFormData(prev => ({ ...prev, features: [...prev.features, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Özellik Ekle
-        </button>
-      </div>
+{/* ENGLISH TAB */}
+{activeTab === 'en' && (
+  <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+    <h2 className="text-lg font-semibold text-gray-900 mb-4">English Content</h2>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Tour Title (EN) <span className="text-red-500">*</span>
+      </label>
+      <input 
+        type="text" 
+        name="titleEN" 
+        value={formData.titleEN} 
+        onChange={handleChange} 
+        required
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="E.g: Gobustan and Mud Volcanoes Tour" 
+      />
+    </div>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Description (EN) <span className="text-red-500">*</span>
+      </label>
+      <textarea 
+        name="descriptionEN" 
+        value={formData.descriptionEN} 
+        onChange={handleChange} 
+        required 
+        rows={6}
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Detailed tour description..." 
+      />
+    </div>
+  </div>
+)}
 
-      {/* DAHİL OLANLAR (TR) */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Dahil Olanlar (TR)</h2>
-        {formData.included.map((item, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input
-              type="text"
-              value={item}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newIncluded = [...formData.included];
-                newIncluded[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, included: newIncluded }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Örn: Otel transferi"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const newIncluded = formData.included.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, included: newIncluded }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              Sil
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setFormData(prev => ({ ...prev, included: [...prev.included, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Ekle
-        </button>
-      </div>
-
-      {/* DAHİL OLMAYANLAR (TR) */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Dahil Olmayanlar (TR)</h2>
-        {formData.excluded.map((item, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input
-              type="text"
-              value={item}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newExcluded = [...formData.excluded];
-                newExcluded[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, excluded: newExcluded }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Örn: Kişisel harcamalar"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const newExcluded = formData.excluded.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, excluded: newExcluded }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              Sil
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setFormData(prev => ({ ...prev, excluded: [...prev.excluded, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Ekle
-        </button>
-      </div>
-
-      {/* GÜNLÜK PROGRAM (TR) */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Günlük Program (TR)</h2>
-        {formData.itinerary.map((day, idx) => (
-          <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-gray-700">Gün {idx + 1}</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  const newItinerary = formData.itinerary.filter((_, i) => i !== idx);
-                  setFormData(prev => ({ ...prev, itinerary: newItinerary }));
-                }}
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-              >
-                Sil
-              </button>
-            </div>
-            <input
-              type="text"
-              value={day.title}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newItinerary = [...formData.itinerary];
-                newItinerary[idx].title = e.target.value;
-                setFormData(prev => ({ ...prev, itinerary: newItinerary }));
-              }}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Gün başlığı (Örn: Bakü Şehir Turu)"
-            />
-            <textarea
-              value={day.description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                const newItinerary = [...formData.itinerary];
-                newItinerary[idx].description = e.target.value;
-                setFormData(prev => ({ ...prev, itinerary: newItinerary }));
-              }}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Günün açıklaması..."
-            />
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setFormData(prev => ({ ...prev, itinerary: [...prev.itinerary, { title: '', description: '' }] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Gün Ekle
-        </button>
-      </div>
-    </>
-  )}
-
-  {/* İngilizce */}
-  {activeTab === 'en' && (
-    <>
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">English Content</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tour Title (EN) *</label>
-          <input 
-            type="text" 
-            name="titleEN" 
-            value={formData.titleEN} 
-            onChange={handleChange} 
-            required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g: Gobustan & Mud Volcanoes Tour" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description (EN) *</label>
-          <textarea 
-            name="descriptionEN" 
-            value={formData.descriptionEN} 
-            onChange={handleChange} 
-            required 
-            rows={6}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Detailed tour description..." 
-          />
-        </div>
-      </div>
-
-      {/* Features EN */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Features (EN)</h2>
-        {formData.featuresEN.map((feature, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input
-              type="text"
-              value={feature}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newFeatures = [...formData.featuresEN];
-                newFeatures[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, featuresEN: newFeatures }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="e.g: Professional guide"
-            />
-            <button type="button" onClick={() => {
-                const newFeatures = formData.featuresEN.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, featuresEN: newFeatures }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-              Delete
-            </button>
-          </div>
-        ))}
-        <button type="button"
-          onClick={() => setFormData(prev => ({ ...prev, featuresEN: [...prev.featuresEN, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          + Add Feature
-        </button>
-      </div>
-
-      {/* Included EN */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Included (EN)</h2>
-        {formData.includedEN.map((item, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input type="text" value={item}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newIncluded = [...formData.includedEN];
-                newIncluded[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, includedEN: newIncluded }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="e.g: Hotel transfer"
-            />
-            <button type="button" onClick={() => {
-                const newIncluded = formData.includedEN.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, includedEN: newIncluded }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-              Delete
-            </button>
-          </div>
-        ))}
-        <button type="button"
-          onClick={() => setFormData(prev => ({ ...prev, includedEN: [...prev.includedEN, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          + Add
-        </button>
-      </div>
-
-      {/* Excluded EN */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Excluded (EN)</h2>
-        {formData.excludedEN.map((item, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input type="text" value={item}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newExcluded = [...formData.excludedEN];
-                newExcluded[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, excludedEN: newExcluded }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="e.g: Personal expenses"
-            />
-            <button type="button" onClick={() => {
-                const newExcluded = formData.excludedEN.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, excludedEN: newExcluded }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-              Delete
-            </button>
-          </div>
-        ))}
-        <button type="button"
-          onClick={() => setFormData(prev => ({ ...prev, excludedEN: [...prev.excludedEN, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          + Add
-        </button>
-      </div>
-
-      {/* Itinerary EN */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Itinerary (EN)</h2>
-        {formData.itineraryEN.map((day, idx) => (
-          <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-gray-700">Day {idx + 1}</h3>
-              <button type="button"
-                onClick={() => {
-                  const newItinerary = formData.itineraryEN.filter((_, i) => i !== idx);
-                  setFormData(prev => ({ ...prev, itineraryEN: newItinerary }));
-                }}
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
-                Delete
-              </button>
-            </div>
-            <input type="text" value={day.title}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newItinerary = [...formData.itineraryEN];
-                newItinerary[idx].title = e.target.value;
-                setFormData(prev => ({ ...prev, itineraryEN: newItinerary }));
-              }}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Day title (e.g: Baku City Tour)"
-            />
-            <textarea value={day.description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                const newItinerary = [...formData.itineraryEN];
-                newItinerary[idx].description = e.target.value;
-                setFormData(prev => ({ ...prev, itineraryEN: newItinerary }));
-              }}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Day description..."
-            />
-          </div>
-        ))}
-        <button type="button"
-          onClick={() => setFormData(prev => ({ ...prev, itineraryEN: [...prev.itineraryEN, { title: '', description: '' }] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          + Add Day
-        </button>
-      </div>
-    </>
-  )}
-
-  {/* Rusça */}
-  {activeTab === 'ru' && (
-    <>
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Русский Контент</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Название тура (RU) *</label>
-          <input type="text" name="titleRU" value={formData.titleRU} onChange={handleChange} required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Например: Тур Гобустан и грязевые вулканы" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Описание (RU) *</label>
-          <textarea name="descriptionRU" value={formData.descriptionRU} onChange={handleChange} required rows={6}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Подробное описание тура..." />
-        </div>
-      </div>
-
-      {/* Features RU - tekrar eden yapı */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Особенности (RU)</h2>
-        {formData.featuresRU.map((feature, idx) => (
-          <div key={idx} className="flex gap-2">
-            <input type="text" value={feature}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newFeatures = [...formData.featuresRU];
-                newFeatures[idx] = e.target.value;
-                setFormData(prev => ({ ...prev, featuresRU: newFeatures }));
-              }}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg"
-              placeholder="Например: Профессиональный гид"
-            />
-            <button type="button" onClick={() => {
-                const newFeatures = formData.featuresRU.filter((_, i) => i !== idx);
-                setFormData(prev => ({ ...prev, featuresRU: newFeatures }));
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-              Удалить
-            </button>
-          </div>
-        ))}
-        <button type="button"
-          onClick={() => setFormData(prev => ({ ...prev, featuresRU: [...prev.featuresRU, ''] }))}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          + Добавить
-        </button>
-      </div>
-
-      {/* Included, Excluded, Itinerary RU - aynı mantık */}
-      {/* includedRU, excludedRU, itineraryRU alanları için yukarıdaki gibi tekrarla */}
-    </>
-  )}
-
-  {/* Azerice */}
-  {activeTab === 'az' && (
-    <>
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Azərbaycan Dili</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tur Başlığı (AZ) *</label>
-          <input type="text" name="titleAZ" value={formData.titleAZ} onChange={handleChange} required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Misal: Bakı Şəhər Turu" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Açıqlama (AZ) *</label>
-          <textarea name="descriptionAZ" value={formData.descriptionAZ} onChange={handleChange} required rows={6}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Tura dair ətraflı açıqlama..." />
-        </div>
-      </div>
-
-      {/* featuresAZ, includedAZ, excludedAZ, itineraryAZ - aynı mantık */}
-    </>
-  )}
+{/* RUSSIAN TAB */}
+{activeTab === 'ru' && (
+  <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+    <h2 className="text-lg font-semibold text-gray-900 mb-4">Русский Контент</h2>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Название тура (RU) <span className="text-red-500">*</span>
+      </label>
+      <input 
+        type="text" 
+        name="titleRU" 
+        value={formData.titleRU} 
+        onChange={handleChange} 
+        required
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Напр: Гобустан и Грязевые Вулканы" 
+      />
+    </div>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Описание (RU) <span className="text-red-500">*</span>
+      </label>
+      <textarea 
+        name="descriptionRU" 
+        value={formData.descriptionRU} 
+        onChange={handleChange} 
+        required 
+        rows={6}
+        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="Подробное описание тура..." 
+      />
+    </div>
+  </div>
+)}
 
   {/* Genel Bilgiler */}
   <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">

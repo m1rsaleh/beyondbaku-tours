@@ -187,14 +187,14 @@ export default function TranslationsManager() {
           ? { ...t, ...formData }
           : t
       ));
-       showToast('success', 'Çeviri güncellendi!');
+       showToast('Çeviri güncellendi!', 'success');
     } else {
       const newTranslation: Translation = {
         id: Date.now().toString(),
         ...formData
       };
       setTranslations([...translations, newTranslation]);
-      showToast('success', 'Yeni çeviri eklendi!');
+      showToast('Yeni çeviri eklendi!', 'success');
     }
 
     setShowAddModal(false);
@@ -235,7 +235,7 @@ export default function TranslationsManager() {
   const handleSaveAll = () => {
     // Backend'e tüm çevirileri kaydet
     console.log('Saving all translations:', translations);
-    showToast('success', 'Tüm çeviriler başarıyla kaydedildi!');
+    showToast('Tüm çeviriler başarıyla kaydedildi!', 'success');
   };
 
   return (

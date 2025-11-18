@@ -6,6 +6,8 @@ import { TypeAnimation } from 'react-type-animation'
 import { supabase } from '../lib/supabase'
 import { pageContentService } from '../services/pageContentService'
 import type { Tour, HomePageContent } from '../types'
+import { useTranslation } from 'react-i18next'
+import { getLocalizedField as t_ } from '../utils/i18nHelper'
 
 interface Testimonial {
   id: string;
@@ -20,6 +22,7 @@ interface Testimonial {
 }
 
 export default function Home() {
+  const { i18n } = useTranslation();
   const [featuredTours, setFeaturedTours] = useState<Tour[]>([])
   const [content, setContent] = useState<HomePageContent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -279,21 +282,21 @@ export default function Home() {
             <div className="relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 h-full">
               <div className="relative h-64 sm:h-80 overflow-hidden">
                 <motion.img
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.6 }}
-                  src={
-                    Array.isArray(tour.images) && tour.images.length > 0
-                      ? tour.images[0]
-                      : typeof tour.images === 'string' && tour.images
-                      ? tour.images
-                      : 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'
-                  }
-                  alt={tour.title_tr}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80';
-                  }}
-                />
+  whileHover={{ scale: 1.1 }}
+  transition={{ duration: 0.6 }}
+  src={
+    Array.isArray(tour.images) && tour.images.length > 0
+      ? tour.images[0]
+      : typeof tour.images === 'string' && tour.images
+      ? tour.images
+      : 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'
+  }
+  alt={t_(tour, 'title')} // ⭐️ DEĞİŞTİ
+  className="w-full h-full object-cover"
+  onError={(e) => {
+    e.currentTarget.src = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80';
+  }}
+/>
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
                 
@@ -328,13 +331,15 @@ export default function Home() {
                   </span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-3 sm:mb-4 group-hover:text-gold transition leading-tight">
-                  {tour.title_tr}
-                </h3>
-                
-                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 line-clamp-2 leading-relaxed font-light">
-                  {tour.description_tr}
-                </p>
+              {/* Tur kartlarında - SATIR ~260 civarı */}
+<h3 className="text-xl sm:text-2xl font-serif font-bold text-primary mb-3 sm:mb-4 group-hover:text-gold transition leading-tight">
+  {t_(tour, 'title')} {/* ⭐️ DEĞİŞTİ - Önceden tour.title_tr */}
+</h3>
+
+<p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 line-clamp-2 leading-relaxed font-light">
+  {t_(tour, 'description')} {/* ⭐️ DEĞİŞTİ - Önceden tour.description_tr */}
+</p>
+
 
                 <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-gray-100">
                   <div className="flex items-center gap-3 sm:gap-4">

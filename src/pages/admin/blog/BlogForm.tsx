@@ -85,7 +85,7 @@ export default function BlogForm() {
       setLoading(true);
       blogService.getById(id as string)
         .then(data => setFormData({ ...emptyForm, ...data }))
-        .catch(() => showToast('error', 'Blog yazısı bulunamadı'))
+        .catch(() => showToast('Blog yazısı bulunamadı','error'))
         .finally(() => setLoading(false));
     } else {
       setFormData(emptyForm);
@@ -128,14 +128,14 @@ export default function BlogForm() {
     try {
       if (isEditMode) {
         await blogService.update(id as string, formData);
-        showToast('success', 'Blog yazısı güncellendi!');
+        showToast('Blog yazısı güncellendi!','success');
       } else {
         await blogService.create(formData);
-        showToast('success', 'Blog yazısı eklendi!');
+        showToast('Blog yazısı eklendi!','success');
       }
       navigate('/admin/blog');
     } catch (err: any) {
-      showToast('error', 'Kayıt sırasında hata: ' + (err.message || err));
+      showToast('Kayıt sırasında hata: ' + (err.message || err), 'error');
     }
     setLoading(false);
   };

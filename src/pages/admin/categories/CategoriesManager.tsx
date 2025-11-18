@@ -74,18 +74,18 @@ export default function CategoriesManager() {
     try {
       if (editingCategory) {
         await categoryService.update(categoryType, editingCategory.id, { ...formData });
-        showToast('success', 'Kategori başarıyla güncellendi!');
+        showToast( 'Kategori başarıyla güncellendi!','success')
       } else {
         const order_num = categories.length + 1;
         await categoryService.create(categoryType, { ...formData, order_num, status: formData.status });
-        showToast('success', 'Yeni kategori başarıyla eklendi!');
+        showToast('Yeni kategori başarıyla eklendi!', 'success');
       }
       setShowAddModal(false);
       setEditingCategory(null);
       resetForm();
       await loadCategories();
     } catch (err: any) {
-      showToast('error', 'Kayıt sırasında hata: ' + (err.message || err));
+showToast('Kayıt sırasında hata: ' + (err.message || err), 'error');
     }
     setLoading(false);
   }
@@ -95,10 +95,10 @@ export default function CategoriesManager() {
       setLoading(true);
       try {
         await categoryService.delete(categoryType, id);
-        showToast('success', 'Kategori başarıyla silindi!');
+        showToast('Kategori başarıyla silindi!', 'success');
         await loadCategories();
       } catch (err: any) {
-        showToast('error', 'Silinemedi: ' + (err.message || err));
+        showToast( 'Silinemedi: ' + (err.message || err), 'error');
       }
       setLoading(false);
     }
@@ -110,7 +110,7 @@ export default function CategoriesManager() {
     await categoryService.update(categoryType, id, {
       status: category.status === 'active' ? 'inactive' : 'active'
     });
-    showToast('info', 'Kategori durumu güncellendi!');
+    showToast('Kategori durumu güncellendi!', 'info');
     loadCategories();
   }
 

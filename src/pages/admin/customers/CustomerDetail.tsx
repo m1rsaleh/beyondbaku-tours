@@ -1,7 +1,9 @@
 // src/pages/admin/customers/CustomerDetail.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, CreditCard, Star, MessageSquare } from 'lucide-react';
+import { customerService } from '../../../services/customerService';
+import { supabase } from '../../../lib/supabase';
 
 interface Customer {
   id: string;
@@ -18,93 +20,62 @@ interface Customer {
 
 interface Booking {
   id: string;
-  tour: string;
-  date: string;
-  amount: number;
+  tour: any;
+  tour_date: string;
+  total_price: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
 }
 
 interface Review {
   id: string;
-  tour: string;
+  tour_id: string;
   rating: number;
   comment: string;
-  date: string;
+  created_at: string;
 }
 
 export default function CustomerDetail() {
-  const { id } = useParams();
+  const { id } = useParams(); // id = email
   const navigate = useNavigate();
 
-  const [customer] = useState<Customer>({
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+994 50 123 45 67',
-    country: 'USA',
-    registeredDate: '2025-01-15',
-    totalBookings: 5,
-    totalSpent: 450,
-    status: 'active',
-    notes: 'VIP müşteri, özel ilgi gösterilmeli.'
-  });
-
-  const [bookings] = useState<Booking[]>([
-    {
-      id: 'BK001',
-      tour: 'Gobustan & Mud Volcanoes',
-      date: '2025-11-20',
-      amount: 90,
-      status: 'confirmed'
-    },
-    {
-      id: 'BK002',
-      tour: 'Baku City Tour',
-      date: '2025-10-15',
-      amount: 70,
-      status: 'completed'
-    },
-    {
-      id: 'BK003',
-      tour: 'Gabala Adventure',
-      date: '2025-09-10',
-      amount: 165,
-      status: 'completed'
-    },
-    {
-      id: 'BK004',
-      tour: 'Sheki Culture Tour',
-      date: '2025-08-05',
-      amount: 100,
-      status: 'completed'
-    },
-    {
-      id: 'BK005',
-      tour: 'Gobustan Tour',
-      date: '2025-07-01',
-      amount: 45,
-      status: 'cancelled'
-    }
-  ]);
-
-  const [reviews] = useState<Review[]>([
-    {
-      id: '1',
-      tour: 'Baku City Tour',
-      rating: 5,
-      comment: 'Harika bir deneyimdi! Rehber çok bilgiliydi.',
-      date: '2025-10-16'
-    },
-    {
-      id: '2',
-      tour: 'Gabala Adventure',
-      rating: 4,
-      comment: 'Güzel bir turdu, manzaralar muhteşemti.',
-      date: '2025-09-11'
-    }
-  ]);
-
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
+
+  useEffect(() => {
+    if (id) {
+      loadCustomerData(id);
+    }
+  }, [id]);
+
+  async function loadCustomerData(email: string) {
+    try {
+      setLoading(true);
+      
+      // Müşteri verilerini çek
+      const data = await customerService.getCustomerByEmail(email);
+      
+      if (data) {
+        setCustomer(data.customer);
+        setBookings(data.bookings);
+        
+        // Yorumları çek
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('email', email)
+          .order('created_at', { ascending: false });
+        
+        setReviews(reviewsData || []);
+      }
+    } catch (error) {
+      console.error('Müşteri verisi yüklenemedi:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleAddNote = () => {
     if (newNote.trim()) {
@@ -114,7 +85,9 @@ export default function CustomerDetail() {
   };
 
   const handleSendEmail = () => {
-    alert(`${customer.email} adresine e-posta gönderildi!`);
+    if (customer) {
+      alert(`${customer.email} adresine e-posta gönderildi!`);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -130,6 +103,28 @@ export default function CustomerDetail() {
   const renderStars = (rating: number) => {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!customer) {
+    return (
+      <div className="p-6">
+        <p className="text-red-600 text-lg font-semibold">Müşteri bulunamadı.</p>
+        <button 
+          onClick={() => navigate('/admin/customers')} 
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Müşterilere Dön
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -265,26 +260,32 @@ export default function CustomerDetail() {
               Rezervasyon Geçmişi
             </h2>
             <div className="space-y-3">
-              {bookings.map((booking) => (
-                <div 
-                  key={booking.id} 
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/admin/bookings/${booking.id}`)}
-                >
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{booking.tour}</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(booking.date).toLocaleDateString('tr-TR')}
-                    </p>
+              {bookings.length > 0 ? (
+                bookings.map((booking) => (
+                  <div 
+                    key={booking.id} 
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                  >
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {booking.tour?.title_tr || 'Bilinmeyen Tur'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(booking.tour_date).toLocaleDateString('tr-TR')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-bold text-gray-900">${booking.total_price}</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(booking.status)}`}>
+                        {booking.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-lg font-bold text-gray-900">${booking.amount}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(booking.status)}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-4">Henüz rezervasyon yok</p>
+              )}
             </div>
           </div>
 
@@ -295,20 +296,24 @@ export default function CustomerDetail() {
               Yorumlar
             </h2>
             <div className="space-y-4">
-              {reviews.map((review) => (
-                <div key={review.id} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-gray-900">{review.tour}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(review.date).toLocaleDateString('tr-TR')}
-                      </p>
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <div key={review.id} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-semibold text-gray-900">Tur ID: {review.tour_id}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(review.created_at).toLocaleDateString('tr-TR')}
+                        </p>
+                      </div>
+                      <div className="text-xl">{renderStars(review.rating)}</div>
                     </div>
-                    <div className="text-xl">{renderStars(review.rating)}</div>
+                    <p className="text-gray-700">{review.comment}</p>
                   </div>
-                  <p className="text-gray-700">{review.comment}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-4">Henüz yorum yok</p>
+              )}
             </div>
           </div>
         </div>
@@ -395,7 +400,7 @@ export default function CustomerDetail() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Ortalama Harcama</span>
                 <span className="font-semibold">
-                  ${Math.round(customer.totalSpent / customer.totalBookings)}
+                  ${customer.totalBookings > 0 ? Math.round(customer.totalSpent / customer.totalBookings) : 0}
                 </span>
               </div>
             </div>

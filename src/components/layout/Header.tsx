@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaBars, FaTimes } from 'react-icons/fa'
+import LanguageSelector from '../LanguageSelector'
 
 export default function Header() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -44,7 +45,9 @@ export default function Header() {
             <Link to="/tours" className="font-medium text-gray-700 hover:text-gold transition">
               {t('nav.tours')}
             </Link>
-            <Link to="/blog">Blog</Link>
+            <Link to="/blog" className="font-medium text-gray-700 hover:text-gold transition">
+              {t('nav.blog')}
+            </Link>
             <Link to="/about" className="font-medium text-gray-700 hover:text-gold transition">
               {t('nav.about')}
             </Link>
@@ -52,39 +55,23 @@ export default function Header() {
               {t('nav.contact')}
             </Link>
 
-            {/* Language Selector */}
-            <select
-              value={i18n.language}
-              onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="px-3 py-1.5 rounded-lg font-medium cursor-pointer bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-            >
-              <option value="tr">TR</option>
-              <option value="en">EN</option>
-              <option value="ru">RU</option>
-              <option value="az">AZ</option>
-            </select>
+            {/* Language Selector Component */}
+            <LanguageSelector />
 
             {/* Book Button */}
             <Link
               to="/tours"
               className="px-4 lg:px-6 py-2 lg:py-2.5 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition shadow-lg hover:shadow-xl whitespace-nowrap"
             >
-              Rezervasyon
+              {t('hero.ctaButton')}
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 sm:gap-3 md:hidden">
-            <select
-              value={i18n.language}
-              onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="px-2 py-1 text-xs sm:text-sm rounded-lg font-medium cursor-pointer bg-gray-100 text-gray-700"
-            >
-              <option value="tr">TR</option>
-              <option value="en">EN</option>
-              <option value="ru">RU</option>
-              <option value="az">AZ</option>
-            </select>
+            <div className="scale-75">
+              <LanguageSelector />
+            </div>
 
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -122,6 +109,13 @@ export default function Header() {
                   {t('nav.tours')}
                 </Link>
                 <Link 
+                  to="/blog" 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition"
+                >
+                  {t('nav.blog')}
+                </Link>
+                <Link 
                   to="/about" 
                   onClick={() => setIsMenuOpen(false)}
                   className="block py-2.5 px-4 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition"
@@ -142,7 +136,7 @@ export default function Header() {
                     onClick={() => setIsMenuOpen(false)}
                     className="block mx-4 px-6 py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition text-center"
                   >
-                    Rezervasyon
+                    {t('hero.ctaButton')}
                   </Link>
                 </div>
               </div>
